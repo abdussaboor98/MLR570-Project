@@ -1,0 +1,125 @@
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, classification_report
+from hdbscan import HDBSCAN
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from skopt import BayesSearchCV
+from skopt.space import Integer, Categorical
+from sklearn.model_selection import train_test_split
+
+# Assuming X_train, X_test, y_train, and y_test are already defined
+
+# Step 1: Split training data into train and validation sets
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
+
+# Step 2: Cluster the training data using HDBSCAN
+hdbscan_model = HDBSCAN(min_cluster_size=30, min_samples=10, prediction_data=True)
+clusters_train = hdbscan_model.fit_predict(X_train)
+
+# Use approximate prediction method for validation and test data
+from hdbscan import approximate_predict
+clusters_val, _ = approximate_predict(hdbscan_model, X_val)
+clusters_test, _ = approximate_predict(hdbscan_model, X_test)
+
+# Append cluster labels to the training, validation, and test data
+X_train = pd.DataFrame(X_train)
+X_train['cluster'] = clusters_train
+X_val = pd.DataFrame(X_val)
+X_val['cluster'] = clusters_val
+X_test = pd.DataFrame(X_test)
+X_test['cluster'] = clusters_test
+
+# Create a RandomForest model for each cluster and hypertune it
+rf_models = {}
+metrics = {}
+model_weights = {}
+
+for cluster in np.unique(clusters_train):
+    if cluster == -1:  # Ignore noise points (label -1)
+        continue
+
+    # Subset the training and validation data for the cluster
+    X_train_cluster = X_train[X_train['cluster'] == cluster].drop(columns=['cluster'])
+    y_train_cls = y_train.loc[X_train_cluster.index]
+    X_val_cluster = X_val[X_val['cluster'] == cluster].drop(columns=['cluster'])
+    y_val_cls = y_val.loc[X_val_cluster.index]
+
+    # Define parameter space for Bayesian Optimization
+    param_space = {
+        'n_estimators': Integer(50, 200),
+        'max_depth': Integer(5, 50),
+        'min_samples_split': Integer(2, 10),
+        'min_samples_leaf': Integer(1, 5),
+        'max_features': Categorical(['auto', 'sqrt', 'log2'])
+    }
+
+    # Use Bayesian optimization for hyperparameter tuning
+    bayes_cv = BayesSearchCV(
+        estimator=RandomForestClassifier(),
+        search_spaces=param_space,
+        n_iter=50,
+        cv=3,
+        n_jobs=-1,
+        scoring='f1'
+    )
+    bayes_cv.fit(X_train_cluster, y_train_cls)
+    best_rf = bayes_cv.best_estimator_
+    rf_models[cluster] = best_rf
+
+    # Make predictions on the validation set and evaluate metrics
+    y_val_pred = best_rf.predict(X_val_cluster)
+    accuracy = accuracy_score(y_val_cls, y_val_pred)
+    precision = precision_score(y_val_cls, y_val_pred)
+    recall = recall_score(y_val_cls, y_val_pred)
+    f1 = f1_score(y_val_cls, y_val_pred)
+    model_weights[cluster] = f1  # Assign weight to the model based on validation F1 score
+
+    # Print metrics
+    print(f"Cluster {cluster} Validation Metrics:")
+    print(f"Accuracy: {accuracy}")
+    print(f"Precision: {precision}")
+    print(f"Recall: {recall}")
+    print(f"F1 Score: {f1}")
+
+# Normalizing weights to sum to 1
+total_weight = sum(model_weights.values())
+model_weights = {cluster: weight / total_weight for cluster, weight in model_weights.items()}
+
+# Make final predictions on the test set using weighted average
+final_predictions = []
+all_y_true = []
+for idx in X_test.index:
+    cluster = X_test.loc[idx, 'cluster']
+    if cluster == -1:  # If it's noise, you can skip or handle it differently
+        continue
+
+    # Get predictions from all models, weighted by their respective scores
+    weighted_sum = 0
+    total_weight = 0
+    for model_cluster, model in rf_models.items():
+        weight = model_weights.get(model_cluster, 0)
+        # Give highest weight to the model of the cluster that the test data belongs to
+        if model_cluster == cluster:
+            weight += 1  # Boost the weight of the corresponding cluster model
+        prediction = model.predict([X_test.drop(columns=['cluster']).loc[idx]])[0]
+        weighted_sum += prediction * weight
+        total_weight += weight
+
+    # Final prediction is the weighted average
+    final_prediction = round(weighted_sum / total_weight)
+    final_predictions.append(final_prediction)
+    all_y_true.append(y_test.loc[idx])
+
+# Calculate overall metrics
+overall_accuracy = accuracy_score(all_y_true, final_predictions)
+overall_precision = precision_score(all_y_true, final_predictions)
+overall_recall = recall_score(all_y_true, final_predictions)
+overall_f1 = f1_score(all_y_true, final_predictions)
+
+print("\nOverall Metrics (Weighted Average Ensemble):")
+print(f"Overall Accuracy: {overall_accuracy}")
+print(f"Overall Precision: {overall_precision}")
+print(f"Overall Recall: {overall_recall}")
+print(f"Overall F1 Score: {overall_f1}")

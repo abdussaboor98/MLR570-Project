@@ -1,0 +1,7 @@
+Result 1:
+
+Overall Metrics:
+Overall Accuracy: 0.7542936851588155
+Overall Precision: 0.5888860303576022
+Overall Recall: 0.2502733435381588
+Overall F1 Score: 0.3512621806184301
