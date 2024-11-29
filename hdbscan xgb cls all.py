@@ -322,7 +322,7 @@ for cluster in np.unique(clusters_train):
 
     # Use Bayesian optimization for hyperparameter tuning
     bayes_cv = BayesSearchCV(
-        estimator=XGBClassifier(),
+        estimator=XGBClassifier(booster='gbtree'),
         search_spaces=param_space,
         n_iter=50,
         cv=5,
@@ -363,7 +363,7 @@ param_space = {
     'colsample_bytree': Real(0.5, 1.0, prior='uniform')
 }
 bayes_cv = BayesSearchCV(
-    estimator=XGBClassifier(),
+    estimator=XGBClassifier(booster='gbtree'),
     search_spaces=param_space,
     n_iter=50,
     cv=3,
