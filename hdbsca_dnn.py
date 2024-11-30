@@ -210,8 +210,13 @@ for cluster in X_train['cluster'].unique():
     
     # Split into train and validation sets
     X_train_cluster, X_val_cluster, y_train_cluster, y_val_cluster = train_test_split(
-        X_cluster, y_cluster, test_size=0.2, random_state=42
+        X_cluster, y_cluster, test_size=0.2, stratify=y_cluster, random_state=42
     )
+    # Apply SMOTE to balance the training data
+    smote = SMOTE(random_state=42)
+    X_train_cluster_balanced, y_train_cluster_balanced = smote.fit_resample(X_train_cluster, y_train_cluster, random_state=42)
+    X_train_cluster = X_train_cluster_balanced
+    y_train_cluster = y_train_cluster_balanced
     
     # Create Dataset and DataLoader for train and validation
     train_dataset = FlightDataset(X_train_cluster, y_train_cluster)
@@ -258,8 +263,10 @@ for cluster in X_train['cluster'].unique():
         predictions = (model(torch.tensor(X_cluster, dtype=torch.float32).to(device)) >= 0.5).int()
     relative_errors = (predictions.cpu().numpy() != y_cluster).astype(int)
     p_error = relative_errors.sum() / len(relative_errors)
-    print(f"Cluster {cluster} p-error: {p_error:.4f}")
-    entropy = -p_error * np.log(p_error + 1e-9) - (1 - p_error) * np.log(1 - p_error + 1e-9)
+    print(f"Cluster {cluster} p-error un-clipped: {p_error:.4f}")
+    p_error = np.clip(p_error, 1e-9, 1 - 1e-9)
+    print(f"Cluster {cluster} p-error clipped: {p_error:.4f}")
+    entropy = -p_error * np.log(p_error) - (1 - p_error) * np.log(1 - p_error)
     print(f"Cluster {cluster} entropy: {entropy:.4f}")
     entropy_weights[cluster] = 1 - entropy
     
