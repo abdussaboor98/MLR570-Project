@@ -255,15 +255,27 @@ for cluster in X_train['cluster'].unique():
     cluster_weight = len(y_cluster) / len(y_train)
     model_weights_cluster[cluster] = cluster_weight
     
-    # Use actual F1 score for weighting
+    # Use actual F1 score for weighting 
     model_weights_f1[cluster] = f1
     
     # Calculate entropy weighted value
     print(f"Calculating entropy for Cluster {cluster}")
-    with torch.no_grad():
-        predictions = (model(torch.tensor(X_cluster, dtype=torch.float32).to(device)) >= 0.5).int()
-    relative_errors = (predictions.cpu().numpy() != y_cluster).astype(int)
-    p_error = relative_errors.sum() / len(relative_errors)
+    # Process in smaller batches to reduce memory usage
+    batch_size = 1000
+    total_errors = 0
+    n_samples = len(X_cluster)
+    
+    for i in range(0, n_samples, batch_size):
+        batch_end = min(i + batch_size, n_samples)
+        X_batch = torch.tensor(X_cluster[i:batch_end], dtype=torch.float32).to(device)
+        y_batch = y_cluster[i:batch_end]
+        
+        with torch.no_grad():
+            predictions = (model(X_batch) >= 0.5).int()
+            batch_errors = (predictions.cpu().numpy() != y_batch).sum()
+            total_errors += batch_errors
+    
+    p_error = total_errors / n_samples
     epsilon = 1e-9
     entropy = -p_error * np.log(p_error + epsilon) - (1 - p_error) * np.log(1 - p_error + epsilon)
     print(f"Cluster {cluster} entropy: {entropy:.4f}")
