@@ -15,6 +15,9 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from category_encoders import CatBoostEncoder
 from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
 
+# Check if CUDA is available
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 # Define DNN model
 class FlightDelayDNN(nn.Module):
     def __init__(self, input_dim):
@@ -47,7 +50,7 @@ class FlightDataset(Dataset):
         return len(self.X)
 
     def __getitem__(self, idx):
-        return torch.tensor(self.X[idx], dtype=torch.float32), torch.tensor(self.y[idx], dtype=torch.float32)
+        return torch.tensor(self.X[idx], dtype=torch.float32).to(device), torch.tensor(self.y[idx], dtype=torch.float32).to(device)
 
 # Define training function
 def train_model(model, dataloader, criterion, optimizer, epochs):
@@ -205,7 +208,7 @@ for cluster in X_train_balanced['cluster'].unique():
     
     # Define model, criterion, and optimizer
     input_dim = X_cluster.shape[1]
-    model = FlightDelayDNN(input_dim=input_dim)
+    model = FlightDelayDNN(input_dim=input_dim).to(device)
     criterion = nn.BCELoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     
@@ -265,6 +268,8 @@ with torch.no_grad():
         
         model = cluster_models.get(cluster)
         if model:
+            X_batch = X_batch.to(device)
+            y_batch = y_batch.to(device)
             outputs = model(X_batch).squeeze()
             predictions = (outputs >= 0.5).int()
             final_predictions_non_weighted.append(predictions.item())
