@@ -236,7 +236,7 @@ print("\nBalanced class distribution:")
 print(pd.Series(y_train_balanced).value_counts())
 
 bayes_cv = BayesSearchCV(
-    estimator=LGBMClassifier(),
+    estimator=LGBMClassifier(verbosity=-1),
     search_spaces=param_space,
     n_iter=5,
     cv=3,
@@ -336,7 +336,7 @@ for cluster in np.unique(clusters_train):
 
     # Use Bayesian optimization for hyperparameter tuning
     bayes_cv = BayesSearchCV(
-        estimator=LGBMClassifier(),
+        estimator=LGBMClassifier(verbosity=-1),
         search_spaces=param_space,
         n_iter=5,
         cv=5,
