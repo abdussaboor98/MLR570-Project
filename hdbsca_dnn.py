@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
 from hdbscan import HDBSCAN, approximate_predict
 from hdbscan.prediction import membership_vector
@@ -54,19 +55,58 @@ class FlightDataset(Dataset):
     def __getitem__(self, idx):
         return torch.tensor(self.X[idx], dtype=torch.float32).to(device), torch.tensor(self.y[idx], dtype=torch.float32).to(device)
 
-# Define training function
-def train_model(model, dataloader, criterion, optimizer, epochs):
+def train_model(model, train_loader, val_loader, criterion, optimizer, epochs, patience=5):
     model.train()
+    train_losses = []
+    val_losses = []
+    best_val_loss = float('inf')
+    patience_counter = 0
+
     for epoch in range(epochs):
         running_loss = 0.0
-        for X_batch, y_batch in dataloader:
+        for X_batch, y_batch in train_loader:
             optimizer.zero_grad()
             outputs = model(X_batch)
             loss = criterion(outputs.squeeze(), y_batch)
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
-        print(f"Epoch [{epoch+1}/{epochs}], Loss: {running_loss/len(dataloader):.4f}")
+        train_loss = running_loss / len(train_loader)
+        train_losses.append(train_loss)
+
+        # Validation phase
+        model.eval()
+        val_running_loss = 0.0
+        with torch.no_grad():
+            for X_batch, y_batch in val_loader:
+                outputs = model(X_batch)
+                val_loss = criterion(outputs.squeeze(), y_batch)
+                val_running_loss += val_loss.item()
+        val_loss = val_running_loss / len(val_loader)
+        val_losses.append(val_loss)
+        model.train()
+
+        print(f"Epoch [{epoch+1}/{epochs}], Train Loss: {train_loss:.4f}, Validation Loss: {val_loss:.4f}")
+
+        # Early stopping
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            patience_counter = 0
+        else:
+            patience_counter += 1
+            if patience_counter >= patience:
+                print("Early stopping triggered")
+                break
+
+    # Plot training and validation loss
+    plt.figure(figsize=(10, 5))
+    plt.plot(train_losses, label='Training Loss')
+    plt.plot(val_losses, label='Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.title('Training and Validation Loss')
+    plt.show()
 
 # Load data
 flight_data_train = pd.read_csv('./flight_data_train_ts.csv')
@@ -74,6 +114,9 @@ flight_data_test = pd.read_csv('./flight_data_test_ts.csv')
 
 flight_data_train['scheduledoffblocktime'] = pd.to_datetime(flight_data_train['scheduledoffblocktime'])
 flight_data_test['scheduledoffblocktime'] = pd.to_datetime(flight_data_test['scheduledoffblocktime'])
+
+flight_data_train.sort_values(by='scheduledoffblocktime', inplace=True).reset_index(drop=True)
+flight_data_test.sort_values(by='scheduledoffblocktime', inplace=True).reset_index(drop=True)
 
 # Extract date features
 departdatetime = flight_data_train['scheduledoffblocktime'].dt
@@ -147,6 +190,61 @@ numerical_cols = ['tmpf', 'dwpf', 'relh', 'drct', 'sknt', 'alti', 'vsby', 'skyl1
 scaler = MinMaxScaler(feature_range=(0, 1))
 X_train[numerical_cols] = scaler.fit_transform(X_train[numerical_cols])
 X_test[numerical_cols] = scaler.transform(X_test[numerical_cols])
+
+
+X_train_, X_val, y_train_, y_val = train_test_split(
+        X_train, y_train, test_size=0.2, stratify=y_train, random_state=42
+)
+
+# Apply SMOTE to balance the training data
+print("Applying SMOTE to balance training data")
+smote = SMOTE(random_state=42)
+X_train_balanced, y_train_balanced = smote.fit_resample(X_train_, y_train_)
+
+# Create data loaders
+train_dataset = FlightDataset(X_train_balanced.to_numpy(), y_train_balanced.to_numpy())
+val_dataset = FlightDataset(X_val.to_numpy(), y_val.to_numpy())
+test_dataset = FlightDataset(X_test.to_numpy(), y_test.to_numpy())
+
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False)
+test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+
+# Initialize and train the model
+print("Training DNN model on balanced data")
+input_dim = X_train_balanced.shape[1]
+model = FlightDelayDNN(input_dim).to(device)
+criterion = nn.BCELoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+train_model(model, train_loader, val_loader, criterion, optimizer, epochs=100, patience=5)
+
+# Evaluate on test set
+print("\nEvaluating model on test set")
+model.eval()
+all_predictions = []
+all_targets = []
+
+with torch.no_grad():
+    for X_batch, y_batch in test_loader:
+        X_batch = X_batch.to(device)
+        outputs = model(X_batch)
+        predictions = (outputs >= 0.5).int().cpu().numpy()
+        all_predictions.extend(predictions)
+        all_targets.extend(y_batch.cpu().numpy())
+
+# Calculate metrics
+accuracy = accuracy_score(all_targets, all_predictions)
+precision = precision_score(all_targets, all_predictions)
+recall = recall_score(all_targets, all_predictions)
+f1 = f1_score(all_targets, all_predictions)
+
+print("\nTest Set Metrics:")
+print(f"Accuracy: {accuracy:.4f}")
+print(f"Precision: {precision:.4f}")
+print(f"Recall: {recall:.4f}")
+print(f"F1 Score: {f1:.4f}")
+
 
 print("Clustering using HDBSCAN")
 # Apply HDBSCAN clustering
@@ -231,7 +329,7 @@ for cluster in X_train['cluster'].unique():
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     
     # Train model
-    train_model(model, train_loader, criterion, optimizer, epochs=20)
+    train_model(model, train_loader, val_loader, criterion, optimizer, epochs=100, patience=5)
     
     # Calculate F1 score on validation set
     model.eval()
@@ -301,10 +399,10 @@ final_predictions_non_weighted = []
 final_predictions_pre_classifier = []
 
 with torch.no_grad():
-    for X_batch, y_batch in test_loader:
-        # Ensure correct mapping of batch indices to DataFrame indices
-        batch_indices = test_loader.batch_sampler.sampler.indices
-        for idx, X_point in zip(batch_indices, X_batch):
+    for batch_idx, (X_batch, y_batch) in enumerate(test_loader):
+        start_idx = batch_idx * test_loader.batch_size
+        for i, X_point in enumerate(X_batch):
+            idx = start_idx + i
             cluster = X_test.iloc[idx]['cluster']
             if cluster == -1:
                 # Find nearest cluster using euclidean distance to cluster centroids
@@ -359,18 +457,23 @@ with torch.no_grad():
                 if prediction in votes_entropy_weighted:
                     votes_entropy_weighted[prediction] += entropy_weights[model_cluster]
                 else:
-                    votes_entropy_weighted[prediction] = entropy_weights[model_cluster] 
-    
-
+                    votes_entropy_weighted[prediction] = entropy_weights[model_cluster]
+                    
+            # Determine the final prediction based on the weighted votes
+            final_predictions_f1_weighted.append(max(votes_weighted_f1, key=votes_weighted_f1.get))
+            final_predictions_cluster_weighted.append(max(votes_weighted_cluster, key=votes_weighted_cluster.get))
+            final_predictions_probability_weighted.append(max(votes_probability, key=votes_probability.get))
+            final_predictions_pre_classifier.append(max(votes_pre_classifier, key=votes_pre_classifier.get))
+            final_predictions_entropy_weighted.append(max(votes_entropy_weighted, key=votes_entropy_weighted.get))
             all_y_true.append(y_test.loc[idx])
             
 # Calculate overall metrics
 ##########################
 # Weighted Average F1 Ensemble
 ##########################
-overall_accuracy_f1 = accuracy_score(all_y_true, np.round(final_predictions_f1_weighted))
-overall_precision_f1 = precision_score(all_y_true, np.round(final_predictions_f1_weighted))
-overall_recall_f1 = recall_score(all_y_true, np.round(final_predictions_f1_weighted))
+overall_accuracy_f1 = accuracy_score(all_y_true, final_predictions_f1_weighted)
+overall_precision_f1 = precision_score(all_y_true, final_predictions_f1_weighted)
+overall_recall_f1 = recall_score(all_y_true, final_predictions_f1_weighted)
 overall_f1_score_f1 = f1_score(all_y_true, np.round(final_predictions_f1_weighted))
 print("\nOverall Metrics (Weighted Average F1 Ensemble):")
 print(f"Accuracy: {overall_accuracy_f1:.4f}")
@@ -381,9 +484,9 @@ print(f"F1 Score: {overall_f1_score_f1:.4f}")
 ##########################
 # Weighted Average Cluster Size Ensemble
 ##########################
-overall_accuracy_cluster = accuracy_score(all_y_true, np.round(final_predictions_cluster_weighted))
-overall_precision_cluster = precision_score(all_y_true, np.round(final_predictions_cluster_weighted))
-overall_recall_cluster = recall_score(all_y_true, np.round(final_predictions_cluster_weighted))
+overall_accuracy_cluster = accuracy_score(all_y_true, final_predictions_cluster_weighted)
+overall_precision_cluster = precision_score(all_y_true, final_predictions_cluster_weighted)
+overall_recall_cluster = recall_score(all_y_true, final_predictions_cluster_weighted)
 overall_f1_score_cluster = f1_score(all_y_true, np.round(final_predictions_cluster_weighted))
 print("\nOverall Metrics (Weighted Average Cluster Size Ensemble):")
 print(f"Accuracy: {overall_accuracy_cluster:.4f}")
@@ -394,10 +497,10 @@ print(f"F1 Score: {overall_f1_score_cluster:.4f}")
 ##########################
 # Entropy Weighted Ensemble
 ##########################
-overall_accuracy_entropy = accuracy_score(all_y_true, np.round(final_predictions_entropy_weighted))
-overall_precision_entropy = precision_score(all_y_true, np.round(final_predictions_entropy_weighted))
-overall_recall_entropy = recall_score(all_y_true, np.round(final_predictions_entropy_weighted))
-overall_f1_score_entropy = f1_score(all_y_true, np.round(final_predictions_entropy_weighted))
+overall_accuracy_entropy = accuracy_score(all_y_true, final_predictions_entropy_weighted)
+overall_precision_entropy = precision_score(all_y_true, final_predictions_entropy_weighted)
+overall_recall_entropy = recall_score(all_y_true, final_predictions_entropy_weighted)
+overall_f1_score_entropy = f1_score(all_y_true, final_predictions_entropy_weighted)
 print("\nOverall Metrics (Entropy Weighted Ensemble):")
 print(f"Accuracy: {overall_accuracy_entropy:.4f}")
 print(f"Precision: {overall_precision_entropy:.4f}")
