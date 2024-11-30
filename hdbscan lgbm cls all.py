@@ -211,18 +211,18 @@ X_train
 
 # %%
 param_space = {
-    "num_leaves": Integer(10, 100),
-    "max_depth": Integer(3, 15),
-    "max_bin": Integer(100, 300),
-    "min_data_in_leaf": Integer(1, 50),
-    "feature_fraction": Real(0.6, 1.0),
-    "bagging_fraction": Real(0.6, 1.0),
+    "num_leaves": Integer(10, 200),
+    "max_depth": Integer(3, 20),
+    "max_bin": Integer(128, 512),
+    "min_data_in_leaf": Integer(5, 100), 
+    "feature_fraction": Real(0.4, 1.0), 
+    "bagging_fraction": Real(0.5, 1.0),
     "bagging_freq": Integer(1, 50),
-    "lambda_l1": Real(0.0, 1.0),
-    "lambda_l2": Real(0.0, 1.0),
-    "min_split_gain": Real(0.0, 1.0),
-    "learning_rate": Real(0.01, 0.2),
-    "n_estimators": Integer(100, 1000),
+    "lambda_l1": Real(1e-4, 10.0, prior="log-uniform"),
+    "lambda_l2": Real(1e-4, 10.0, prior="log-uniform"),
+    "min_split_gain": Real(1e-4, 1.0, prior="log-uniform"),
+    "learning_rate": Real(0.005, 0.2, prior="log-uniform"), 
+    "n_estimators": Integer(50, 1500),
 }
 
 # # Apply SMOTE to balance the training data
@@ -238,8 +238,8 @@ param_space = {
 bayes_cv = BayesSearchCV(
     estimator=LGBMClassifier(verbosity=-1, class_weight="balanced", random_state=42),
     search_spaces=param_space,
-    n_iter=5,
-    cv=3,
+    n_iter=50,
+    cv=5,
     n_jobs=-1,
     scoring='f1',
     random_state=42
@@ -320,25 +320,25 @@ for cluster in np.unique(clusters_train):
 #     print(pd.Series(y_train_balanced).value_counts())
 
     param_space = {
-        "num_leaves": Integer(10, 100),
-        "max_depth": Integer(3, 15),
-        "max_bin": Integer(100, 300),
-        "min_data_in_leaf": Integer(1, 50),
-        "feature_fraction": Real(0.6, 1.0),
-        "bagging_fraction": Real(0.6, 1.0),
+        "num_leaves": Integer(10, 200),
+        "max_depth": Integer(3, 20),
+        "max_bin": Integer(128, 512),
+        "min_data_in_leaf": Integer(5, 100), 
+        "feature_fraction": Real(0.4, 1.0), 
+        "bagging_fraction": Real(0.5, 1.0),
         "bagging_freq": Integer(1, 50),
-        "lambda_l1": Real(0.0, 1.0),
-        "lambda_l2": Real(0.0, 1.0),
-        "min_split_gain": Real(0.0, 1.0),
-        "learning_rate": Real(0.01, 0.2),
-        "n_estimators": Integer(100, 1000),
+        "lambda_l1": Real(1e-4, 10.0, prior="log-uniform"),
+        "lambda_l2": Real(1e-4, 10.0, prior="log-uniform"),
+        "min_split_gain": Real(1e-4, 1.0, prior="log-uniform"),
+        "learning_rate": Real(0.005, 0.2, prior="log-uniform"), 
+        "n_estimators": Integer(50, 1500),
     }
 
     # Use Bayesian optimization for hyperparameter tuning
     bayes_cv = BayesSearchCV(
         estimator=LGBMClassifier(verbosity=-1, class_weight="balanced", random_state=42),
         search_spaces=param_space,
-        n_iter=5,
+        n_iter=50,
         cv=5,
         n_jobs=-1,
         scoring='f1',
@@ -368,23 +368,23 @@ for cluster in np.unique(clusters_train):
 
 # %%
 param_space = {
-    "num_leaves": Integer(10, 100),
-    "max_depth": Integer(3, 15),
-    "max_bin": Integer(100, 300),
-    "min_data_in_leaf": Integer(1, 50),
-    "feature_fraction": Real(0.6, 1.0),
-    "bagging_fraction": Real(0.6, 1.0),
+    "num_leaves": Integer(10, 200),
+    "max_depth": Integer(3, 20),
+    "max_bin": Integer(128, 512),
+    "min_data_in_leaf": Integer(5, 100), 
+    "feature_fraction": Real(0.4, 1.0), 
+    "bagging_fraction": Real(0.5, 1.0),
     "bagging_freq": Integer(1, 50),
-    "lambda_l1": Real(0.0, 1.0),
-    "lambda_l2": Real(0.0, 1.0),
-    "min_split_gain": Real(0.0, 1.0),
-    "learning_rate": Real(0.01, 0.2),
-    "n_estimators": Integer(100, 1000),
-    }
+    "lambda_l1": Real(1e-4, 10.0, prior="log-uniform"),
+    "lambda_l2": Real(1e-4, 10.0, prior="log-uniform"),
+    "min_split_gain": Real(1e-4, 1.0, prior="log-uniform"),
+    "learning_rate": Real(0.005, 0.2, prior="log-uniform"), 
+    "n_estimators": Integer(50, 1500),
+}
 bayes_cv = BayesSearchCV(
     estimator=LGBMClassifier(verbosity=-1, class_weight="balanced", random_state=42),
     search_spaces=param_space,
-    n_iter=5,
+    n_iter=10,
     cv=3,
     n_jobs=-1,
     scoring='f1_weighted',
