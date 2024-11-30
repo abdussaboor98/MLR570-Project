@@ -210,20 +210,20 @@ X_train
 # clusters['Cluster'].value_counts()
 
 # %%
-param_space = [
-    Integer(10, 100, name="num_leaves"),
-    Integer(3, 15, name="max_depth"),
-    Integer(100, 300, name="max_bin"),
-    Integer(1, 50, name="min_data_in_leaf"),
-    Real(0.6, 1.0, name="feature_fraction"),
-    Real(0.6, 1.0, name="bagging_fraction"),
-    Integer(1, 50, name="bagging_freq"),
-    Real(0.0, 1.0, name="lambda_l1"),
-    Real(0.0, 1.0, name="lambda_l2"),
-    Real(0.0, 1.0, name="min_split_gain"),
-    Real(0.01, 0.2, name="learning_rate"),
-    Integer(100, 1000, name="n_estimators"),
-]
+param_space = {
+    "num_leaves": Integer(10, 100),
+    "max_depth": Integer(3, 15),
+    "max_bin": Integer(100, 300),
+    "min_data_in_leaf": Integer(1, 50),
+    "feature_fraction": Real(0.6, 1.0),
+    "bagging_fraction": Real(0.6, 1.0),
+    "bagging_freq": Integer(1, 50),
+    "lambda_l1": Real(0.0, 1.0),
+    "lambda_l2": Real(0.0, 1.0),
+    "min_split_gain": Real(0.0, 1.0),
+    "learning_rate": Real(0.01, 0.2),
+    "n_estimators": Integer(100, 1000),
+}
 
 # Apply SMOTE to balance the training data
 smote = SMOTE(random_state=42)
@@ -319,20 +319,20 @@ for cluster in np.unique(clusters_train):
     print("\nBalanced class distribution:")
     print(pd.Series(y_train_balanced).value_counts())
 
-    param_space = [
-        Integer(10, 100, name="num_leaves"),
-        Integer(3, 15, name="max_depth"),
-        Integer(100, 300, name="max_bin"),
-        Integer(1, 50, name="min_data_in_leaf"),
-        Real(0.6, 1.0, name="feature_fraction"),
-        Real(0.6, 1.0, name="bagging_fraction"),
-        Integer(1, 50, name="bagging_freq"),
-        Real(0.0, 1.0, name="lambda_l1"),
-        Real(0.0, 1.0, name="lambda_l2"),
-        Real(0.0, 1.0, name="min_split_gain"),
-        Real(0.01, 0.2, name="learning_rate"),
-        Integer(100, 1000, name="n_estimators"),
-    ]
+    param_space = {
+        "num_leaves": Integer(10, 100),
+        "max_depth": Integer(3, 15),
+        "max_bin": Integer(100, 300),
+        "min_data_in_leaf": Integer(1, 50),
+        "feature_fraction": Real(0.6, 1.0),
+        "bagging_fraction": Real(0.6, 1.0),
+        "bagging_freq": Integer(1, 50),
+        "lambda_l1": Real(0.0, 1.0),
+        "lambda_l2": Real(0.0, 1.0),
+        "min_split_gain": Real(0.0, 1.0),
+        "learning_rate": Real(0.01, 0.2),
+        "n_estimators": Integer(100, 1000),
+    }
 
     # Use Bayesian optimization for hyperparameter tuning
     bayes_cv = BayesSearchCV(
@@ -574,98 +574,3 @@ print(f"Overall Accuracy: {overall_accuracy}")
 print(f"Overall Precision: {overall_precision}")
 print(f"Overall Recall: {overall_recall}")
 print(f"Overall F1 Score: {overall_f1}")
-
-# %%
-# final_predictions_entropy_weighted = []
-# all_y_true = []
-# for idx in X_test.index:
-    
-#     votes_entropy_weighted = {}
-#     for model_cluster, model in rf_models.items():
-#         prediction = model.predict(X_test.drop(columns=['cluster']).loc[[idx]])[0]
-        
-#         if prediction in votes_entropy_weighted:
-#             votes_entropy_weighted[prediction] += entropy_weights[model_cluster]
-#         else:
-#             votes_entropy_weighted[prediction] = entropy_weights[model_cluster]    
-
-#     # Final prediction is the weighted average
-#     final_prediction_entropy_weighted = max(votes_entropy_weighted, key=votes_entropy_weighted.get)
-#     final_predictions_entropy_weighted.append(final_prediction_entropy_weighted)
-    
-#     all_y_true.append(y_test.loc[idx])
-    
-# overall_accuracy = accuracy_score(all_y_true, final_predictions_entropy_weighted)
-# overall_precision = precision_score(all_y_true, final_predictions_entropy_weighted)
-# overall_recall = recall_score(all_y_true, final_predictions_entropy_weighted)
-# overall_f1 = f1_score(all_y_true, final_predictions_entropy_weighted)
-
-# print("Overall Metrics (Entropy Weighted):")
-# print(f"Overall Accuracy: {overall_accuracy}")
-# print(f"Overall Precision: {overall_precision}")
-# print(f"Overall Recall: {overall_recall}")
-# print(f"Overall F1 Score: {overall_f1}")
-
-# %%
-# # Make final predictions on the test set using weighted average
-# final_predictions_pre_classifier = []
-# all_y_true = []
-# for idx in X_test.index:
-        
-    
-    
-#     votes_pre_classifier = {}
-#     for model_cluster, model in rf_models.items():
-#         prediction = model.predict(X_test.drop(columns=['cluster']).loc[[idx]])[0]
-        
-            
-
-#     # Final prediction is the weighted average
-#     final_prediction_pre_classifier = max(votes_pre_classifier, key=votes_pre_classifier.get)
-#     final_predictions_pre_classifier.append(final_prediction_pre_classifier)
-    
-#     all_y_true.append(y_test.loc[idx])
-
-# %%
-# overall_accuracy = accuracy_score(all_y_true, final_predictions_pre_classifier)
-# overall_precision = precision_score(all_y_true, final_predictions_pre_classifier)
-# overall_recall = recall_score(all_y_true, final_predictions_pre_classifier)
-# overall_f1 = f1_score(all_y_true, final_predictions_pre_classifier)
-
-# print("\nOverall Metrics (Pre-Classifier):")
-# print(f"Overall Accuracy: {overall_accuracy}")
-# print(f"Overall Precision: {overall_precision}")
-# print(f"Overall Recall: {overall_recall}")
-# print(f"Overall F1 Score: {overall_f1}")
-
-# %%
-# entropy_weights = {}
-# for model_cluster, model in rf_models.items():
-#     # Calculate the relative error of the sub-network
-#     X_cluster = X_train[X_train['cluster'] == model_cluster].drop(columns=['cluster'])
-#     y_cluster = y_train.loc[X_cluster.index]
-#     predictions = model.predict(X_cluster)
-#     relative_errors = (predictions != y_cluster).astype(int)
-#     p_error = relative_errors.sum() / len(relative_errors)
-        
-#     # Calculate the entropy based on relative error
-#     entropy = -p_error * np.log(p_error + 1e-9) - (1 - p_error) * np.log(1 - p_error + 1e-9)
-#     weight = 1 - entropy
-#     entropy_weights[model_cluster] = weight
-    
-# # Normalize weights
-
-
-# %%
-# 
-
-# %%
-# total_weight = sum(entropy_weights.values())
-# for model_cluster in entropy_weights:
-#     entropy_weights[model_cluster] /= total_weight
-# entropy_weights
-
-# %%
-
-
-
