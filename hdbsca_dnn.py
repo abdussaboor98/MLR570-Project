@@ -260,19 +260,19 @@ for cluster in X_train['cluster'].unique():
     
     # Calculate entropy weighted value
     print(f"Calculating entropy for Cluster {cluster}")
-    # Process in smaller batches to reduce memory usage
-    batch_size = 1000
+    
+    # Create dataset and dataloader for entropy calculation
+    entropy_dataset = FlightDataset(X_cluster, y_cluster)
+    entropy_loader = DataLoader(entropy_dataset, batch_size=64, shuffle=False)
+    
     total_errors = 0
     n_samples = len(X_cluster)
     
-    for i in range(0, n_samples, batch_size):
-        batch_end = min(i + batch_size, n_samples)
-        X_batch = torch.tensor(X_cluster[i:batch_end], dtype=torch.float32).to(device)
-        y_batch = y_cluster[i:batch_end]
-        
-        with torch.no_grad():
+    model.eval()
+    with torch.no_grad():
+        for X_batch, y_batch in entropy_loader:
             predictions = (model(X_batch) >= 0.5).int()
-            batch_errors = (predictions.cpu().numpy() != y_batch).sum()
+            batch_errors = (predictions.cpu().numpy() != y_batch.cpu().numpy()).sum()
             total_errors += batch_errors
     
     p_error = total_errors / n_samples
@@ -288,10 +288,6 @@ for cluster in X_train['cluster'].unique():
 total_entropy_weight = sum(entropy_weights.values())
 for model_cluster in entropy_weights:
     entropy_weights[model_cluster] /= total_entropy_weight
-
-# Make predictions on test set using trained DNNs
-clusters_test = pd.DataFrame(approximate_predict(hdbscan_model, X_test)[0], columns=['Cluster'])
-X_test['cluster'] = clusters_test['Cluster']
 
 print("Making predictions on test set")
 test_dataset = FlightDataset(X_test.drop(columns=['cluster']).values, y_test.values)
