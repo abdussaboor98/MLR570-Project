@@ -11,7 +11,9 @@ from imblearn.over_sampling import SMOTE
 from skopt import BayesSearchCV
 from skopt.space import Integer, Categorical
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from category_encoders import CatBoostEncoder
+from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
 
 # Define DNN model
 class FlightDelayDNN(nn.Module):
@@ -82,8 +84,27 @@ flight_data_test['depart_month'] = departdatetime.month
 flight_data_test['depart_dayofweek'] = departdatetime.dayofweek
 flight_data_test['depart_minute'] = departdatetime.hour * 60 + departdatetime.minute
 
-flight_data_train.drop(columns=['scheduledoffblocktime'], axis=1, inplace=True)
-flight_data_test.drop(columns=['scheduledoffblocktime'], axis=1, inplace=True)
+# Create cyclical features
+flight_data_train['depart_month_sin'] = np.sin(2 * np.pi * flight_data_train['depart_month'] / 12)
+flight_data_train['depart_month_cos'] = np.cos(2 * np.pi * flight_data_train['depart_month'] / 12)
+flight_data_train['depart_day_sin'] = np.sin(2 * np.pi * flight_data_train['depart_day'] / 31)
+flight_data_train['depart_day_cos'] = np.cos(2 * np.pi * flight_data_train['depart_day'] / 31)
+flight_data_train['depart_dayofweek_sin'] = np.sin(2 * np.pi * flight_data_train['depart_dayofweek'] / 7)
+flight_data_train['depart_dayofweek_cos'] = np.cos(2 * np.pi * flight_data_train['depart_dayofweek'] / 7)
+flight_data_train['depart_minute_sin'] = np.sin(2 * np.pi * flight_data_train['depart_minute'] / 1440)
+flight_data_train['depart_minute_cos'] = np.cos(2 * np.pi * flight_data_train['depart_minute'] / 1440)
+
+flight_data_test['depart_month_sin'] = np.sin(2 * np.pi * flight_data_test['depart_month'] / 12)
+flight_data_test['depart_month_cos'] = np.cos(2 * np.pi * flight_data_test['depart_month'] / 12)
+flight_data_test['depart_day_sin'] = np.sin(2 * np.pi * flight_data_test['depart_day'] / 31)
+flight_data_test['depart_day_cos'] = np.cos(2 * np.pi * flight_data_test['depart_day'] / 31)
+flight_data_test['depart_dayofweek_sin'] = np.sin(2 * np.pi * flight_data_test['depart_dayofweek'] / 7)
+flight_data_test['depart_dayofweek_cos'] = np.cos(2 * np.pi * flight_data_test['depart_dayofweek'] / 7)
+flight_data_test['depart_minute_sin'] = np.sin(2 * np.pi * flight_data_test['depart_minute'] / 1440)
+flight_data_test['depart_minute_cos'] = np.cos(2 * np.pi * flight_data_test['depart_minute'] / 1440)
+
+flight_data_train.drop(columns=['scheduledoffblocktime', 'depart_month', 'depart_day', 'depart_dayofweek', 'depart_minute'], axis=1, inplace=True)
+flight_data_test.drop(columns=['scheduledoffblocktime', 'depart_month', 'depart_day', 'depart_dayofweek', 'depart_minute'], axis=1, inplace=True)
 
 # Split data into features and labels
 X_train = flight_data_train.drop(columns=['delay_in_secs', 'finalflightstatus'], axis=1)
@@ -95,6 +116,32 @@ y_test = flight_data_test['finalflightstatus']
 # Encode labels
 y_train = y_train.map({'On-Time': 0, 'Delayed': 1})
 y_test = y_test.map({'On-Time': 0, 'Delayed': 1})
+
+# High cardinality encoding
+high_cardinality_cols = ['airlinecode_iata', 'destination_iata', 'aircraft_iata', 'publicgatenumber']
+catboost_encoder = CatBoostEncoder(cols=high_cardinality_cols, return_df=True)
+X_train_encoded = catboost_encoder.fit_transform(X_train, y_train)
+X_test_encoded = catboost_encoder.transform(X_test)
+X_train = X_train_encoded
+X_test = X_test_encoded
+
+# One-hot encoding
+one_hot_column = ['skyc1', 'skyc2', 'traffictypecode', 'aircraftterminal']
+ohe = OneHotEncoder(drop='first', sparse_output=False, handle_unknown='ignore')
+encoded = ohe.fit_transform(X_train[one_hot_column])
+ohe_new_columns = ohe.get_feature_names_out(one_hot_column)
+encoded_df = pd.DataFrame(encoded, columns=ohe_new_columns)
+X_train = pd.concat([X_train.drop(columns=one_hot_column), encoded_df], axis=1)
+encoded = ohe.transform(X_test[one_hot_column])
+ohe_new_columns = ohe.get_feature_names_out(one_hot_column)
+encoded_df = pd.DataFrame(encoded, columns=ohe_new_columns)
+X_test = pd.concat([X_test.drop(columns=one_hot_column), encoded_df], axis=1)
+
+# Scale numerical columns
+numerical_cols = ['tmpf', 'dwpf', 'relh', 'drct', 'sknt', 'alti', 'vsby', 'skyl1', 'skyl2']
+scaler = MinMaxScaler(feature_range=(0, 1))
+X_train[numerical_cols] = scaler.fit_transform(X_train[numerical_cols])
+X_test[numerical_cols] = scaler.transform(X_test[numerical_cols])
 
 # Apply SMOTE to balance the training data
 smote = SMOTE(random_state=42)
@@ -233,34 +280,64 @@ with torch.no_grad():
 ##########################
 # Weighted Average F1 Ensemble
 ##########################
-overall_accuracy_f1 = sum(np.array(all_y_true) == np.round(final_predictions_f1_weighted)) / len(all_y_true)
+overall_accuracy_f1 = accuracy_score(all_y_true, np.round(final_predictions_f1_weighted))
+overall_precision_f1 = precision_score(all_y_true, np.round(final_predictions_f1_weighted))
+overall_recall_f1 = recall_score(all_y_true, np.round(final_predictions_f1_weighted))
+overall_f1_score_f1 = f1_score(all_y_true, np.round(final_predictions_f1_weighted))
 print("\nOverall Metrics (Weighted Average F1 Ensemble):")
-print(f"Overall Accuracy: {overall_accuracy_f1:.4f}")
+print(f"Accuracy: {overall_accuracy_f1:.4f}")
+print(f"Precision: {overall_precision_f1:.4f}")
+print(f"Recall: {overall_recall_f1:.4f}")
+print(f"F1 Score: {overall_f1_score_f1:.4f}")
 
 ##########################
 # Weighted Average Cluster Size Ensemble
 ##########################
-overall_accuracy_cluster = sum(np.array(all_y_true) == np.round(final_predictions_cluster_weighted)) / len(all_y_true)
+overall_accuracy_cluster = accuracy_score(all_y_true, np.round(final_predictions_cluster_weighted))
+overall_precision_cluster = precision_score(all_y_true, np.round(final_predictions_cluster_weighted))
+overall_recall_cluster = recall_score(all_y_true, np.round(final_predictions_cluster_weighted))
+overall_f1_score_cluster = f1_score(all_y_true, np.round(final_predictions_cluster_weighted))
 print("\nOverall Metrics (Weighted Average Cluster Size Ensemble):")
-print(f"Overall Accuracy: {overall_accuracy_cluster:.4f}")
+print(f"Accuracy: {overall_accuracy_cluster:.4f}")
+print(f"Precision: {overall_precision_cluster:.4f}")
+print(f"Recall: {overall_recall_cluster:.4f}")
+print(f"F1 Score: {overall_f1_score_cluster:.4f}")
 
 ##########################
 # Entropy Weighted Ensemble
 ##########################
-overall_accuracy_entropy = sum(np.array(all_y_true) == np.round(final_predictions_entropy_weighted)) / len(all_y_true)
+overall_accuracy_entropy = accuracy_score(all_y_true, np.round(final_predictions_entropy_weighted))
+overall_precision_entropy = precision_score(all_y_true, np.round(final_predictions_entropy_weighted))
+overall_recall_entropy = recall_score(all_y_true, np.round(final_predictions_entropy_weighted))
+overall_f1_score_entropy = f1_score(all_y_true, np.round(final_predictions_entropy_weighted))
 print("\nOverall Metrics (Entropy Weighted Ensemble):")
-print(f"Overall Accuracy: {overall_accuracy_entropy:.4f}")
+print(f"Accuracy: {overall_accuracy_entropy:.4f}")
+print(f"Precision: {overall_precision_entropy:.4f}")
+print(f"Recall: {overall_recall_entropy:.4f}")
+print(f"F1 Score: {overall_f1_score_entropy:.4f}")
 
 ##########################
 # Non-Weighted Ensemble
 ##########################
-overall_accuracy_non_weighted = sum(np.array(all_y_true) == np.array(final_predictions_non_weighted)) / len(all_y_true)
+overall_accuracy_non_weighted = accuracy_score(all_y_true, final_predictions_non_weighted)
+overall_precision_non_weighted = precision_score(all_y_true, final_predictions_non_weighted)
+overall_recall_non_weighted = recall_score(all_y_true, final_predictions_non_weighted)
+overall_f1_score_non_weighted = f1_score(all_y_true, final_predictions_non_weighted)
 print("\nOverall Metrics (Non-Weighted Ensemble):")
-print(f"Overall Accuracy: {overall_accuracy_non_weighted:.4f}")
+print(f"Accuracy: {overall_accuracy_non_weighted:.4f}")
+print(f"Precision: {overall_precision_non_weighted:.4f}")
+print(f"Recall: {overall_recall_non_weighted:.4f}")
+print(f"F1 Score: {overall_f1_score_non_weighted:.4f}")
 
 ##########################
 # Pre-Classifier
 ##########################
-overall_accuracy_pre_classifier = sum(np.array(all_y_true) == np.array(final_predictions_pre_classifier)) / len(all_y_true)
+overall_accuracy_pre_classifier = accuracy_score(all_y_true, final_predictions_pre_classifier)
+overall_precision_pre_classifier = precision_score(all_y_true, final_predictions_pre_classifier)
+overall_recall_pre_classifier = recall_score(all_y_true, final_predictions_pre_classifier)
+overall_f1_score_pre_classifier = f1_score(all_y_true, final_predictions_pre_classifier)
 print("\nOverall Metrics (Pre-Classifier):")
-print(f"Overall Accuracy: {overall_accuracy_pre_classifier:.4f}")
+print(f"Accuracy: {overall_accuracy_pre_classifier:.4f}")
+print(f"Precision: {overall_precision_pre_classifier:.4f}")
+print(f"Recall: {overall_recall_pre_classifier:.4f}")
+print(f"F1 Score: {overall_f1_score_pre_classifier:.4f}")
