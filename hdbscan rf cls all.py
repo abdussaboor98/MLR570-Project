@@ -25,66 +25,15 @@ from skopt.space import Integer, Categorical
 pd.set_option('display.max_columns', None)
 
 # %%
-flight_data_train = pd.read_csv('./flight_data_train_ts.csv')
-flight_data_test = pd.read_csv('./flight_data_test_ts.csv')
+flight_data_train = pd.read_csv('./flight_data_train_ts_wx.csv')
+flight_data_test = pd.read_csv('./flight_data_test_ts_wx.csv')
 
 # %%
 flight_data_train['scheduledoffblocktime'] = pd.to_datetime(flight_data_train['scheduledoffblocktime'])
 flight_data_test['scheduledoffblocktime'] = pd.to_datetime(flight_data_test['scheduledoffblocktime'])
 
-# flight_data_train.sort_values(by='scheduledoffblocktime', inplace=True)
-# flight_data_test.sort_values(by='scheduledoffblocktime', inplace=True)
-
-# %% [markdown]
-# Feature Selection
-
-# %%
-def chi_2(df, x, y):
-    # Create a contingency table
-    contingency_table = pd.crosstab(df[x], df[y])
-
-    # Perform the Chi-Square test
-    chi2, p, dof, expected = chi2_contingency(contingency_table)
-    print(f"Chi-Square Statistic for {x} and {y}: {chi2}, p-value: {p}, dof:{dof}")
-
-# %%
-def cramers_v(df, x, y):
-    # Create a contingency table
-    contingency_table = pd.crosstab(df[x], df[y])
-    
-    # Perform the Chi-Square test
-    chi2, p, _, _ = chi2_contingency(contingency_table)
-    
-    # Calculate Cramer's V
-    n = contingency_table.sum().sum()
-    min_dim = min(contingency_table.shape) - 1
-    cor = np.sqrt(chi2 / (n * min_dim))
-    print(f"Cramer's V  for {x} and {y}: {cor}, p-value: {p}")
-
-# %%
-flight_data_train.columns
-
-# %%
-chi_2(flight_data_train, 'publicgatenumber', 'finalflightstatus')
-cramers_v(flight_data_train, 'publicgatenumber', 'finalflightstatus')
-
-# %%
-chi_2(flight_data_train, 'destination_iata', 'finalflightstatus')
-cramers_v(flight_data_train, 'destination_iata', 'finalflightstatus')
-
-# %%
-chi_2(flight_data_train, 'aircraft_iata', 'finalflightstatus')
-cramers_v(flight_data_train, 'aircraft_iata', 'finalflightstatus')
-
-# %%
-chi_2(flight_data_train, 'airlinecode_iata', 'finalflightstatus')
-cramers_v(flight_data_train, 'airlinecode_iata', 'finalflightstatus')
-
-# %%
-# columns_to_drop = ['publicgatenumber']
-
-# flight_data_train.drop(columns=columns_to_drop, axis=1, inplace=True)
-# flight_data_test.drop(columns=columns_to_drop, axis=1, inplace=True)
+flight_data_train.sort_values(by='scheduledoffblocktime', inplace=True)
+flight_data_test.sort_values(by='scheduledoffblocktime', inplace=True)
 
 # %%
 departdatetime = flight_data_train['scheduledoffblocktime'].dt
@@ -117,14 +66,6 @@ y_test = y_test.map({'On-Time': 0, 'Delayed':1})
 # %%
 X_train
 
-# %%
-# from imblearn.over_sampling import SMOTENC
-
-# smote = SMOTENC(random_state=42, categorical_features=[0, 1, 2, 3, 5, 16, 17])
-# print('Original dataset shape %s' % Counter(y_train_cls))
-# X_train, y_train_cls = smote.fit_resample(X_train, y_train_cls)
-# print('Resampled dataset shape %s' % Counter(y_train_cls))
-
 
 # %%
 import pandas as pd
@@ -142,8 +83,7 @@ X_train = X_train_encoded
 X_test = X_test_encoded
 
 # %%
-# one_hot_column =  ['skyc1', 'skyc2', 'traffictypecode', 'aircraftterminal', 'airlinecode_iata', 'destination_iata']
-one_hot_column =  ['skyc1', 'skyc2', 'traffictypecode', 'aircraftterminal', ]
+one_hot_column =  ['skyc1', 'skyc2', 'traffictypecode', 'aircraftterminal', 'wxcodes']
 
 ohe = OneHotEncoder(drop='first', sparse_output=False, handle_unknown='ignore')
 
@@ -159,7 +99,7 @@ X_test = pd.concat([X_test.drop(columns=one_hot_column), encoded_df], axis=1)
 
 
 # %%
-numerical_cols = ['tmpf', 'dwpf', 'relh', 'drct', 'sknt', 'alti', 'vsby', 'skyl1', 'skyl2']
+numerical_cols = ['tmpf', 'dwpf', 'relh', 'drct', 'sknt', 'alti', 'vsby', 'skyl1']#, 'skyl2']
 
 # %%
 scaler = MinMaxScaler(feature_range=(0, 1))
@@ -191,30 +131,15 @@ X_train = X_train.drop(['depart_month', 'depart_day', 'depart_minute', 'depart_d
 X_test = X_test.drop(['depart_month', 'depart_day', 'depart_minute', 'depart_dayofweek'], axis=1)
 
 
-# %%
-X_train
-
-# %%
-# neighbors = NearestNeighbors(n_neighbors=39*2)
-# neighbors_fit = neighbors.fit(X_train)
-# distances, indices = neighbors_fit.kneighbors(X_train)
-# avg_distance = distances.mean(axis=1)
-# plt.plot(np.sort(avg_distance))
-# plt.show()
-
-# %%
-# sc = DBSCAN(eps=1.4, min_samples=37*2, algorithm='kd_tree')
-# clusters = pd.DataFrame(sc.fit_predict(X_train), columns=['Cluster'])
-# clusters['Cluster'].value_counts()
-
+print('Training baseline model')
 # %%
 param_space = {
-    'n_estimators': Integer(50, 200),
-    'max_depth': Integer(5, 50),
-    'min_samples_split': Integer(2, 10),
-    'min_samples_leaf': Integer(1, 5),
+    'n_estimators': Integer(100, 300),
+    'max_depth': Integer(10, 50),
+    'min_samples_split': Integer(2, 20),
+    'min_samples_leaf': Integer(1, 10),
     'max_features': Categorical(['sqrt', 'log2']),
-    'criterion': Categorical(['gini', 'entropy', 'log_loss'])
+    'criterion': Categorical(['gini', 'entropy'])
 }
 
 # Apply SMOTE to balance the training data
@@ -256,9 +181,10 @@ print()
 
 
 # %%
+print('Training HDBSCAN')
 hdbscan_model = HDBSCAN(
-    min_cluster_size=3000,      # Increase to avoid microclusters
-    min_samples=5,              # Lower to reduce noise points
+    min_cluster_size=5000,      # Increase to avoid microclusters
+    min_samples=10,              # Lower to reduce noise points
     cluster_selection_epsilon=0.5,  # Increase to reduce noise points
     cluster_selection_method='eom',  # 'eom' tends to produce more balanced clusters
     prediction_data=True,
@@ -282,6 +208,7 @@ X_test['cluster'] = clusters_test
 
 
 # %%
+print('Training RFs for each cluster')
 rf_models = {}
 metrics = {}
 model_weights_f1 = {}
@@ -314,12 +241,12 @@ for cluster in np.unique(clusters_train):
 
     # Define objective function for hyperopt
     param_space = {
-        'n_estimators': Integer(50, 200),
-        'max_depth': Integer(5, 50),
-        'min_samples_split': Integer(2, 10),
-        'min_samples_leaf': Integer(1, 5),
+        'n_estimators': Integer(100, 300),
+        'max_depth': Integer(10, 50),
+        'min_samples_split': Integer(2, 20),
+        'min_samples_leaf': Integer(1, 10),
         'max_features': Categorical(['sqrt', 'log2']),
-        'criterion': Categorical(['gini', 'entropy', 'log_loss']),
+        'criterion': Categorical(['gini', 'entropy'])
     }
 
     # Use Bayesian optimization for hyperparameter tuning
@@ -356,18 +283,19 @@ for cluster in np.unique(clusters_train):
 
 
 # %%
+print('Training Pre-Classifier')
 param_space = {
-    'n_estimators': Integer(50, 200),
-    'max_depth': Integer(5, 50),
-    'min_samples_split': Integer(2, 10),
-    'min_samples_leaf': Integer(1, 5),
+    'n_estimators': Integer(100, 300),
+    'max_depth': Integer(10, 50),
+    'min_samples_split': Integer(2, 20),
+    'min_samples_leaf': Integer(1, 10),
     'max_features': Categorical(['sqrt', 'log2']),
-    'criterion': Categorical(['gini', 'entropy', 'log_loss']),
-    }
+    'criterion': Categorical(['gini', 'entropy'])
+}
 bayes_cv = BayesSearchCV(
     estimator=RandomForestClassifier(),
     search_spaces=param_space,
-    n_iter=10,
+    n_iter=20,
     cv=3,
     n_jobs=-1,
     n_points=2,
@@ -392,6 +320,7 @@ model_weights_f1
 
 # %%
 # Make final predictions on the test set using weighted average
+print('Making final predictions')
 final_predictions_f1_weighted = []
 final_predictions_cluster_weighted = []
 final_predictions_probability_weighted = []
@@ -564,98 +493,3 @@ print(f"Overall Accuracy: {overall_accuracy}")
 print(f"Overall Precision: {overall_precision}")
 print(f"Overall Recall: {overall_recall}")
 print(f"Overall F1 Score: {overall_f1}")
-
-# %%
-# final_predictions_entropy_weighted = []
-# all_y_true = []
-# for idx in X_test.index:
-    
-#     votes_entropy_weighted = {}
-#     for model_cluster, model in rf_models.items():
-#         prediction = model.predict(X_test.drop(columns=['cluster']).loc[[idx]])[0]
-        
-#         if prediction in votes_entropy_weighted:
-#             votes_entropy_weighted[prediction] += entropy_weights[model_cluster]
-#         else:
-#             votes_entropy_weighted[prediction] = entropy_weights[model_cluster]    
-
-#     # Final prediction is the weighted average
-#     final_prediction_entropy_weighted = max(votes_entropy_weighted, key=votes_entropy_weighted.get)
-#     final_predictions_entropy_weighted.append(final_prediction_entropy_weighted)
-    
-#     all_y_true.append(y_test.loc[idx])
-    
-# overall_accuracy = accuracy_score(all_y_true, final_predictions_entropy_weighted)
-# overall_precision = precision_score(all_y_true, final_predictions_entropy_weighted)
-# overall_recall = recall_score(all_y_true, final_predictions_entropy_weighted)
-# overall_f1 = f1_score(all_y_true, final_predictions_entropy_weighted)
-
-# print("Overall Metrics (Entropy Weighted):")
-# print(f"Overall Accuracy: {overall_accuracy}")
-# print(f"Overall Precision: {overall_precision}")
-# print(f"Overall Recall: {overall_recall}")
-# print(f"Overall F1 Score: {overall_f1}")
-
-# %%
-# # Make final predictions on the test set using weighted average
-# final_predictions_pre_classifier = []
-# all_y_true = []
-# for idx in X_test.index:
-        
-    
-    
-#     votes_pre_classifier = {}
-#     for model_cluster, model in rf_models.items():
-#         prediction = model.predict(X_test.drop(columns=['cluster']).loc[[idx]])[0]
-        
-            
-
-#     # Final prediction is the weighted average
-#     final_prediction_pre_classifier = max(votes_pre_classifier, key=votes_pre_classifier.get)
-#     final_predictions_pre_classifier.append(final_prediction_pre_classifier)
-    
-#     all_y_true.append(y_test.loc[idx])
-
-# %%
-# overall_accuracy = accuracy_score(all_y_true, final_predictions_pre_classifier)
-# overall_precision = precision_score(all_y_true, final_predictions_pre_classifier)
-# overall_recall = recall_score(all_y_true, final_predictions_pre_classifier)
-# overall_f1 = f1_score(all_y_true, final_predictions_pre_classifier)
-
-# print("\nOverall Metrics (Pre-Classifier):")
-# print(f"Overall Accuracy: {overall_accuracy}")
-# print(f"Overall Precision: {overall_precision}")
-# print(f"Overall Recall: {overall_recall}")
-# print(f"Overall F1 Score: {overall_f1}")
-
-# %%
-# entropy_weights = {}
-# for model_cluster, model in rf_models.items():
-#     # Calculate the relative error of the sub-network
-#     X_cluster = X_train[X_train['cluster'] == model_cluster].drop(columns=['cluster'])
-#     y_cluster = y_train.loc[X_cluster.index]
-#     predictions = model.predict(X_cluster)
-#     relative_errors = (predictions != y_cluster).astype(int)
-#     p_error = relative_errors.sum() / len(relative_errors)
-        
-#     # Calculate the entropy based on relative error
-#     entropy = -p_error * np.log(p_error + 1e-9) - (1 - p_error) * np.log(1 - p_error + 1e-9)
-#     weight = 1 - entropy
-#     entropy_weights[model_cluster] = weight
-    
-# # Normalize weights
-
-
-# %%
-# 
-
-# %%
-# total_weight = sum(entropy_weights.values())
-# for model_cluster in entropy_weights:
-#     entropy_weights[model_cluster] /= total_weight
-# entropy_weights
-
-# %%
-
-
-

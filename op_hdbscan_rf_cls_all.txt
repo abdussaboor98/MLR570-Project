@@ -1,0 +1,19 @@
+Chi-Square Statistic for publicgatenumber and finalflightstatus: 3369.478291186734, p-value: 0.0, dof:138
+Cramer's V  for publicgatenumber and finalflightstatus: 0.14857548364227435, p-value: 0.0
+Chi-Square Statistic for destination_iata and finalflightstatus: 7662.6641690674, p-value: 0.0, dof:311
+Cramer's V  for destination_iata and finalflightstatus: 0.22405555581807562, p-value: 0.0
+Chi-Square Statistic for aircraft_iata and finalflightstatus: 3463.739098841224, p-value: 0.0, dof:60
+Cramer's V  for aircraft_iata and finalflightstatus: 0.1506393410677108, p-value: 0.0
+Chi-Square Statistic for airlinecode_iata and finalflightstatus: 8357.43074257557, p-value: 0.0, dof:146
+Cramer's V  for airlinecode_iata and finalflightstatus: 0.2339926492356724, p-value: 0.0
+Original class distribution:
+finalflightstatus
+0    110897
+1     41743
+Name: count, dtype: int64
+
+Balanced class distribution:
+finalflightstatus
+0    110897
+1    110897
+Name: count, dtype: int64
