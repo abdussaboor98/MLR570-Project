@@ -225,18 +225,18 @@ param_space = {
     "n_estimators": Integer(100, 1000),
 }
 
-# Apply SMOTE to balance the training data
-smote = SMOTE(random_state=42)
-X_train_balanced, y_train_balanced = smote.fit_resample(X_train, y_train)
+# # Apply SMOTE to balance the training data
+# smote = SMOTE(random_state=42)
+# X_train_balanced, y_train_balanced = smote.fit_resample(X_train, y_train)
 
-# Print class distribution before and after SMOTE
-print("Original class distribution:")
-print(pd.Series(y_train).value_counts())
-print("\nBalanced class distribution:")
-print(pd.Series(y_train_balanced).value_counts())
+# # Print class distribution before and after SMOTE
+# print("Original class distribution:")
+# print(pd.Series(y_train).value_counts())
+# print("\nBalanced class distribution:")
+# print(pd.Series(y_train_balanced).value_counts())
 
 bayes_cv = BayesSearchCV(
-    estimator=LGBMClassifier(verbosity=-1),
+    estimator=LGBMClassifier(verbosity=-1, class_weight="balanced", random_state=42),
     search_spaces=param_space,
     n_iter=5,
     cv=3,
@@ -244,7 +244,7 @@ bayes_cv = BayesSearchCV(
     scoring='f1',
     random_state=42
 )
-bayes_cv.fit(X_train_balanced, y_train_balanced)
+bayes_cv.fit(X_train, y_train)
 best_rf = bayes_cv.best_estimator_
 
 y_pred = best_rf.predict(X_test)
@@ -310,14 +310,14 @@ for cluster in np.unique(clusters_train):
     y_test_cluster = y_test.loc[X_test_cluster.index]
     
     # Apply SMOTE to balance the training data
-    smote = SMOTE(random_state=42)
-    X_train_balanced, y_train_balanced = smote.fit_resample(X_cluster, y_cluster)
+    # smote = SMOTE(random_state=42)
+    # X_train_balanced, y_train_balanced = smote.fit_resample(X_cluster, y_cluster)
 
-# Print class distribution before and after SMOTE
-    print("Original class distribution:")
-    print(pd.Series(y_cluster).value_counts())
-    print("\nBalanced class distribution:")
-    print(pd.Series(y_train_balanced).value_counts())
+# # Print class distribution before and after SMOTE
+#     print("Original class distribution:")
+#     print(pd.Series(y_cluster).value_counts())
+#     print("\nBalanced class distribution:")
+#     print(pd.Series(y_train_balanced).value_counts())
 
     param_space = {
         "num_leaves": Integer(10, 100),
@@ -336,7 +336,7 @@ for cluster in np.unique(clusters_train):
 
     # Use Bayesian optimization for hyperparameter tuning
     bayes_cv = BayesSearchCV(
-        estimator=LGBMClassifier(verbosity=-1),
+        estimator=LGBMClassifier(verbosity=-1, class_weight="balanced", random_state=42),
         search_spaces=param_space,
         n_iter=5,
         cv=5,
@@ -344,7 +344,7 @@ for cluster in np.unique(clusters_train):
         scoring='f1',
         random_state=42
     )
-    bayes_cv.fit(X_train_balanced, y_train_balanced)
+    bayes_cv.fit(X_cluster, y_cluster)
     best_rf = bayes_cv.best_estimator_
     rf_models[cluster] = best_rf
     
@@ -368,15 +368,21 @@ for cluster in np.unique(clusters_train):
 
 # %%
 param_space = {
-    'n_estimators': Integer(50, 200),
-    'max_depth': Integer(5, 50),
-    'min_samples_split': Integer(2, 10),
-    'min_samples_leaf': Integer(1, 5),
-    'max_features': Categorical(['sqrt', 'log2']),
-    'criterion': Categorical(['gini', 'entropy', 'log_loss']),
+    "num_leaves": Integer(10, 100),
+    "max_depth": Integer(3, 15),
+    "max_bin": Integer(100, 300),
+    "min_data_in_leaf": Integer(1, 50),
+    "feature_fraction": Real(0.6, 1.0),
+    "bagging_fraction": Real(0.6, 1.0),
+    "bagging_freq": Integer(1, 50),
+    "lambda_l1": Real(0.0, 1.0),
+    "lambda_l2": Real(0.0, 1.0),
+    "min_split_gain": Real(0.0, 1.0),
+    "learning_rate": Real(0.01, 0.2),
+    "n_estimators": Integer(100, 1000),
     }
 bayes_cv = BayesSearchCV(
-    estimator=RandomForestClassifier(),
+    estimator=LGBMClassifier(verbosity=-1, class_weight="balanced", random_state=42),
     search_spaces=param_space,
     n_iter=5,
     cv=3,
