@@ -238,7 +238,7 @@ for cluster in X_train['cluster'].unique():
             outputs = model(X_batch).squeeze()
             predictions = (outputs >= 0.5).int()
             val_predictions.extend(predictions.cpu().numpy())
-            val_true.extend(y_batch.numpy())
+            val_true.extend(y_batch.cpu().numpy())
     
     f1 = f1_score(val_true, val_predictions)
     print(f"Cluster {cluster} validation F1 score: {f1:.4f}")
