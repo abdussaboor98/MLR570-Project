@@ -241,7 +241,7 @@ bayes_cv = BayesSearchCV(
     n_iter=50,
     cv=5,
     n_jobs=-1,
-    n_points=5,
+    n_points=3,
     scoring='f1',
     random_state=42
 )
