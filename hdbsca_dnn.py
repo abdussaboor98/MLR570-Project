@@ -182,7 +182,7 @@ bayes_cv = BayesSearchCV(
     n_iter=5,
     cv=3,
     n_jobs=-1,
-    scoring='f1',
+    scoring='f1_weighted',
     random_state=42
 )
 bayes_cv.fit(X_train[X_train['cluster'] != -1].drop(columns=['cluster']), X_train['cluster'][X_train['cluster'] != -1])
