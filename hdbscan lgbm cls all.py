@@ -218,10 +218,10 @@ param_space = {
     "feature_fraction": Real(0.4, 1.0), 
     "bagging_fraction": Real(0.5, 1.0),
     "bagging_freq": Integer(1, 50),
-    "lambda_l1": Real(1e-4, 10.0, prior="log-uniform"),
-    "lambda_l2": Real(1e-4, 10.0, prior="log-uniform"),
-    "min_split_gain": Real(1e-4, 1.0, prior="log-uniform"),
-    "learning_rate": Real(0.005, 0.2, prior="log-uniform"), 
+    "lambda_l1": Real(1e-4, 10.0, prior="uniform"),
+    "lambda_l2": Real(1e-4, 10.0, prior="uniform"),
+    "min_split_gain": Real(1e-4, 1.0, prior="uniform"),
+    "learning_rate": Real(0.005, 0.2, prior="uniform"), 
     "n_estimators": Integer(50, 1500),
 }
 
