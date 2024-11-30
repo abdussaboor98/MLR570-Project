@@ -146,6 +146,7 @@ scaler = MinMaxScaler(feature_range=(0, 1))
 X_train[numerical_cols] = scaler.fit_transform(X_train[numerical_cols])
 X_test[numerical_cols] = scaler.transform(X_test[numerical_cols])
 
+print("Clustering using HDBSCAN")
 # Apply HDBSCAN clustering
 hdbscan_model = HDBSCAN(
     min_cluster_size=3000,
@@ -164,6 +165,7 @@ X_train['cluster'] = clusters_train['Cluster']
 X_test['cluster'] = clusters_test
 
 # Train a preclassifier (Random Forest) to predict clusters
+print("Training preclassifier")
 param_space = {
     'n_estimators': Integer(50, 200),
     'max_depth': Integer(5, 50),
@@ -182,12 +184,13 @@ bayes_cv = BayesSearchCV(
     scoring='f1',
     random_state=42
 )
-bayes_cv.fit(X_train[X_train['cluster'] != -1].drop(columns=['cluster']), X_train_balanced['cluster'][X_train_balanced['cluster'] != -1])
+bayes_cv.fit(X_train[X_train['cluster'] != -1].drop(columns=['cluster']), X_train['cluster'][X_train['cluster'] != -1])
 print(bayes_cv.best_score_)
 pre_classifier = bayes_cv.best_estimator_
 pre_classifier_probabilities = pre_classifier.predict_proba(X_test.drop(columns=['cluster']))
 
 # Train a DNN model for each cluster
+print("Training DNN models for each cluster")
 cluster_models = {}
 model_weights_f1 = {}
 model_weights_cluster = {}
@@ -268,6 +271,7 @@ for model_cluster in entropy_weights:
 clusters_test = pd.DataFrame(approximate_predict(hdbscan_model, X_test)[0], columns=['Cluster'])
 X_test['cluster'] = clusters_test['Cluster']
 
+print("Making predictions on test set")
 test_dataset = FlightDataset(X_test.drop(columns=['cluster']).values, y_test.values)
 test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 all_y_true = []
