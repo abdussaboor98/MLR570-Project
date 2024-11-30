@@ -3,18 +3,22 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+from scipy.stats import chi2_contingency
 import sklearn
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder, StandardScaler, MinMaxScaler
 from sklearn.metrics import classification_report, accuracy_score, precision_score, recall_score, f1_score
-from hdbscan import HDBSCAN, approximate_predict
-from hdbscan.prediction import membership_vector
+from sklearn.cluster import KMeans
+from sklearn.neighbors import NearestNeighbors
 from collections import Counter
 from imblearn.over_sampling import SMOTE
-from xgboost import XGBClassifier
-from category_encoders import CatBoostEncoder
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from skopt import BayesSearchCV
-from skopt.space import Integer, Real
+from skopt.space import Integer, Categorical
+from category_encoders import CatBoostEncoder
+from copy import deepcopy
+from skopt import BayesSearchCV
+from skopt.space import Integer, Categorical
 
 pd.set_option('display.max_columns', None)
 
@@ -25,6 +29,60 @@ flight_data_test = pd.read_csv('./flight_data_test_ts.csv')
 # %%
 flight_data_train['scheduledoffblocktime'] = pd.to_datetime(flight_data_train['scheduledoffblocktime'])
 flight_data_test['scheduledoffblocktime'] = pd.to_datetime(flight_data_test['scheduledoffblocktime'])
+
+# flight_data_train.sort_values(by='scheduledoffblocktime', inplace=True)
+# flight_data_test.sort_values(by='scheduledoffblocktime', inplace=True)
+
+# %% [markdown]
+# Feature Selection
+
+# %%
+def chi_2(df, x, y):
+    # Create a contingency table
+    contingency_table = pd.crosstab(df[x], df[y])
+
+    # Perform the Chi-Square test
+    chi2, p, dof, expected = chi2_contingency(contingency_table)
+    print(f"Chi-Square Statistic for {x} and {y}: {chi2}, p-value: {p}, dof:{dof}")
+
+# %%
+def cramers_v(df, x, y):
+    # Create a contingency table
+    contingency_table = pd.crosstab(df[x], df[y])
+    
+    # Perform the Chi-Square test
+    chi2, p, _, _ = chi2_contingency(contingency_table)
+    
+    # Calculate Cramer's V
+    n = contingency_table.sum().sum()
+    min_dim = min(contingency_table.shape) - 1
+    cor = np.sqrt(chi2 / (n * min_dim))
+    print(f"Cramer's V  for {x} and {y}: {cor}, p-value: {p}")
+
+# %%
+flight_data_train.columns
+
+# %%
+chi_2(flight_data_train, 'publicgatenumber', 'finalflightstatus')
+cramers_v(flight_data_train, 'publicgatenumber', 'finalflightstatus')
+
+# %%
+chi_2(flight_data_train, 'destination_iata', 'finalflightstatus')
+cramers_v(flight_data_train, 'destination_iata', 'finalflightstatus')
+
+# %%
+chi_2(flight_data_train, 'aircraft_iata', 'finalflightstatus')
+cramers_v(flight_data_train, 'aircraft_iata', 'finalflightstatus')
+
+# %%
+chi_2(flight_data_train, 'airlinecode_iata', 'finalflightstatus')
+cramers_v(flight_data_train, 'airlinecode_iata', 'finalflightstatus')
+
+# %%
+# columns_to_drop = ['publicgatenumber']
+
+# flight_data_train.drop(columns=columns_to_drop, axis=1, inplace=True)
+# flight_data_test.drop(columns=columns_to_drop, axis=1, inplace=True)
 
 # %%
 departdatetime = flight_data_train['scheduledoffblocktime'].dt
@@ -54,6 +112,8 @@ y_test = flight_data_test['finalflightstatus']
 y_train = y_train.map({'On-Time': 0, 'Delayed':1})
 y_test = y_test.map({'On-Time': 0, 'Delayed':1})
 
+# %%
+
 high_cardinality_cols = ['airlinecode_iata', 'destination_iata', 'aircraft_iata', 'publicgatenumber']
 
 catboost_encoder = CatBoostEncoder(cols=high_cardinality_cols, return_df=True)
@@ -79,7 +139,6 @@ X_train = pd.concat([X_train.drop(columns=one_hot_column), encoded_df], axis=1)
 encoded = ohe.transform(X_test[one_hot_column])
 encoded_df = pd.DataFrame(encoded, columns=ohe_new_columns)
 X_test = pd.concat([X_test.drop(columns=one_hot_column), encoded_df], axis=1)
-
 
 
 # %%
@@ -115,73 +174,13 @@ X_train = X_train.drop(['depart_month', 'depart_day', 'depart_minute', 'depart_d
 X_test = X_test.drop(['depart_month', 'depart_day', 'depart_minute', 'depart_dayofweek'], axis=1)
 
 # %%
-param_space = {
-    'n_estimators': Integer(50, 300),
-    'gamma': Real(1e-6, 10, prior='log-uniform'),
-    'max_depth': Integer(2, 30),
-    'subsample': Real(0.4, 1.0, prior='uniform'),
-    'reg_lambda': Real(1e-3, 10, prior='log-uniform'),
-    'learning_rate': Real(1e-7, 1.0, prior='log-uniform'),
-    'colsample_bytree': Real(0.5, 1.0, prior='uniform')
-}
-
-# Apply SMOTE to balance the training data
-smote = SMOTE(random_state=42)
-X_train_balanced, y_train_balanced = smote.fit_resample(X_train, y_train)
-
-# Print class distribution before and after SMOTE
-print("Original class distribution:")
-print(pd.Series(y_train).value_counts())
-print("\nBalanced class distribution:")
-print(pd.Series(y_train_balanced).value_counts())
-
-bayes_cv = BayesSearchCV(
-    estimator=XGBClassifier(booster='gbtree'),
-    search_spaces=param_space,
-    n_iter=50,
-    cv=3,
-    n_jobs=-1,
-    scoring='f1',
-    random_state=42
-)
-bayes_cv.fit(X_train_balanced, y_train_balanced)
-best_rf = bayes_cv.best_estimator_
-
-y_pred = best_rf.predict(X_test)
-accuracy = accuracy_score(y_test, y_pred)
-precision = precision_score(y_test, y_pred)
-recall = recall_score(y_test, y_pred)
-f1 = f1_score(y_test, y_pred)
-
-print(f"Performance without clustering:")
-print(f"Accuracy: {accuracy}")
-print(f"Precision: {precision}")
-print(f"Recall: {recall}")
-print(f"F1 Score: {f1}")
-print("==========================================")
-print()
-
-
-# %%
-hdbscan_model = HDBSCAN(
-    min_cluster_size=3000,      # Increase to avoid microclusters
-    min_samples=5,              # Lower to reduce noise points
-    cluster_selection_epsilon=0.5,  # Increase to reduce noise points
-    cluster_selection_method='eom',  # 'eom' tends to produce more balanced clusters
-    prediction_data=True,
-    core_dist_n_jobs=-1
-)
-clusters_train = pd.DataFrame(hdbscan_model.fit_predict(X_train), columns=['Cluster'])
+kmeans_model = KMeans(n_clusters=5, random_state=42)
+clusters_train = pd.DataFrame(kmeans_model.fit_predict(X_train), columns=['Cluster'])
 clusters_train['Cluster'].value_counts()
 
 # %%
-clusters_test, _ = approximate_predict(hdbscan_model, X_test)
+clusters_test = kmeans_model.predict(X_test)
 pd.Series(clusters_test).value_counts()
-
-# %%
-probs_test = membership_vector(hdbscan_model, X_test.to_numpy())
-pd.DataFrame(probs_test).head()
-
 
 # %%
 X_train['cluster'] = clusters_train['Cluster']
@@ -221,20 +220,19 @@ for cluster in np.unique(clusters_train):
 
     # Define objective function for hyperopt
     param_space = {
-        'n_estimators': Integer(50, 300),
-        'gamma': Real(1e-6, 10, prior='log-uniform'),
-        'max_depth': Integer(2, 30),
-        'subsample': Real(0.4, 1.0, prior='uniform'),
-        'reg_lambda': Real(1e-3, 10, prior='log-uniform'),
-        'learning_rate': Real(1e-7, 1.0, prior='log-uniform'),
-        'colsample_bytree': Real(0.5, 1.0, prior='uniform')
+        'n_estimators': Integer(50, 200),
+        'max_depth': Integer(5, 50),
+        'min_samples_split': Integer(2, 10),
+        'min_samples_leaf': Integer(1, 5),
+        'max_features': Categorical(['sqrt', 'log2']),
+        'criterion': Categorical(['gini', 'entropy', 'log_loss']),
     }
 
     # Use Bayesian optimization for hyperparameter tuning
     bayes_cv = BayesSearchCV(
-        estimator=XGBClassifier(booster='gbtree'),
+        estimator=RandomForestClassifier(),
         search_spaces=param_space,
-        n_iter=50,
+        n_iter=1,
         cv=5,
         n_jobs=-1,
         scoring='f1',
@@ -264,18 +262,17 @@ for cluster in np.unique(clusters_train):
 
 # %%
 param_space = {
-    'n_estimators': Integer(50, 300),
-    'gamma': Real(1e-6, 10, prior='log-uniform'),
-    'max_depth': Integer(2, 30),
-    'subsample': Real(0.4, 1.0, prior='uniform'),
-    'reg_lambda': Real(1e-3, 10, prior='log-uniform'),
-    'learning_rate': Real(1e-7, 1.0, prior='log-uniform'),
-    'colsample_bytree': Real(0.5, 1.0, prior='uniform')
-}
+    'n_estimators': Integer(50, 200),
+    'max_depth': Integer(5, 50),
+    'min_samples_split': Integer(2, 10),
+    'min_samples_leaf': Integer(1, 5),
+    'max_features': Categorical(['sqrt', 'log2']),
+    'criterion': Categorical(['gini', 'entropy', 'log_loss']),
+    }
 bayes_cv = BayesSearchCV(
-    estimator=XGBClassifier(booster='gbtree'),
+    estimator=RandomForestClassifier(),
     search_spaces=param_space,
-    n_iter=50,
+    n_iter=1,
     cv=3,
     n_jobs=-1,
     scoring='f1_weighted',
@@ -287,7 +284,7 @@ pre_classifier = bayes_cv.best_estimator_
 pre_classifier_probabilities = pre_classifier.predict_proba(X_test.drop(columns=['cluster']))
 
 # %%
-cluster_centers = {c: X_train[X_train['cluster'] == c].drop(columns=['cluster']).mean() for c in rf_models.keys()}
+cluster_centers = kmeans_model.cluster_centers_
 
 # %%
 total_entropy_weight = sum(entropy_weights.values())
@@ -324,7 +321,6 @@ for idx in X_test.index:
                 
         cluster = nearest_cluster
         
-    probabilities_hdbscan = probs_test[idx]
     probabilities_pre_classifier = pre_classifier_probabilities[idx]
     
     votes_weighted_f1 = {}
@@ -347,9 +343,9 @@ for idx in X_test.index:
             votes_weighted_cluster[prediction] = weight_cluster
             
         if prediction in votes_probability:
-            votes_probability[prediction] += probabilities_hdbscan[model_cluster]
+            votes_probability[prediction] += probabilities_pre_classifier[model_cluster]
         else:
-            votes_probability[prediction] = probabilities_hdbscan[model_cluster]
+            votes_probability[prediction] = probabilities_pre_classifier[model_cluster]
         
         if prediction in votes_pre_classifier:
             votes_pre_classifier[prediction] += probabilities_pre_classifier[model_cluster]
@@ -471,4 +467,3 @@ print(f"Overall Accuracy: {overall_accuracy}")
 print(f"Overall Precision: {overall_precision}")
 print(f"Overall Recall: {overall_recall}")
 print(f"Overall F1 Score: {overall_f1}")
-

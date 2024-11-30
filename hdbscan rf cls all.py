@@ -230,7 +230,7 @@ print(pd.Series(y_train_balanced).value_counts())
 bayes_cv = BayesSearchCV(
     estimator=RandomForestClassifier(),
     search_spaces=param_space,
-    n_iter=50,
+    n_iter=5,
     cv=3,
     n_jobs=-1,
     scoring='f1',
@@ -325,7 +325,7 @@ for cluster in np.unique(clusters_train):
     bayes_cv = BayesSearchCV(
         estimator=RandomForestClassifier(),
         search_spaces=param_space,
-        n_iter=50,
+        n_iter=5,
         cv=5,
         n_jobs=-1,
         scoring='f1',
@@ -365,7 +365,7 @@ param_space = {
 bayes_cv = BayesSearchCV(
     estimator=RandomForestClassifier(),
     search_spaces=param_space,
-    n_iter=50,
+    n_iter=5,
     cv=3,
     n_jobs=-1,
     scoring='f1_weighted',
