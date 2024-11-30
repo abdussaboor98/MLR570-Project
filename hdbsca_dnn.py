@@ -214,7 +214,7 @@ for cluster in X_train['cluster'].unique():
     )
     # Apply SMOTE to balance the training data
     smote = SMOTE(random_state=42)
-    X_train_cluster_balanced, y_train_cluster_balanced = smote.fit_resample(X_train_cluster, y_train_cluster, random_state=42)
+    X_train_cluster_balanced, y_train_cluster_balanced = smote.fit_resample(X_train_cluster, y_train_cluster)
     X_train_cluster = X_train_cluster_balanced
     y_train_cluster = y_train_cluster_balanced
     
