@@ -226,7 +226,7 @@ for cluster in X_train['cluster'].unique():
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     
     # Train model
-    train_model(model, train_loader, criterion, optimizer, epochs=10)
+    train_model(model, train_loader, criterion, optimizer, epochs=20)
     
     # Calculate F1 score on validation set
     model.eval()
@@ -258,7 +258,9 @@ for cluster in X_train['cluster'].unique():
         predictions = (model(torch.tensor(X_cluster, dtype=torch.float32).to(device)) >= 0.5).int()
     relative_errors = (predictions.cpu().numpy() != y_cluster).astype(int)
     p_error = relative_errors.sum() / len(relative_errors)
+    print(f"Cluster {cluster} p-error: {p_error:.4f}")
     entropy = -p_error * np.log(p_error + 1e-9) - (1 - p_error) * np.log(1 - p_error + 1e-9)
+    print(f"Cluster {cluster} entropy: {entropy:.4f}")
     entropy_weights[cluster] = 1 - entropy
     
     # Calculate cluster center
