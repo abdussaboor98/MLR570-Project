@@ -259,14 +259,13 @@ for cluster in X_train['cluster'].unique():
     model_weights_f1[cluster] = f1
     
     # Calculate entropy weighted value
+    print(f"Calculating entropy for Cluster {cluster}")
     with torch.no_grad():
         predictions = (model(torch.tensor(X_cluster, dtype=torch.float32).to(device)) >= 0.5).int()
     relative_errors = (predictions.cpu().numpy() != y_cluster).astype(int)
     p_error = relative_errors.sum() / len(relative_errors)
-    print(f"Cluster {cluster} p-error un-clipped: {p_error:.4f}")
-    p_error = np.clip(p_error, 1e-9, 1 - 1e-9)
-    print(f"Cluster {cluster} p-error clipped: {p_error:.4f}")
-    entropy = -p_error * np.log(p_error) - (1 - p_error) * np.log(1 - p_error)
+    epsilon = 1e-9
+    entropy = -p_error * np.log(p_error + epsilon) - (1 - p_error) * np.log(1 - p_error + epsilon)
     print(f"Cluster {cluster} entropy: {entropy:.4f}")
     entropy_weights[cluster] = 1 - entropy
     
