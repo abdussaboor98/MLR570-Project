@@ -146,10 +146,6 @@ scaler = MinMaxScaler(feature_range=(0, 1))
 X_train[numerical_cols] = scaler.fit_transform(X_train[numerical_cols])
 X_test[numerical_cols] = scaler.transform(X_test[numerical_cols])
 
-# Apply SMOTE to balance the training data
-smote = SMOTE(random_state=42)
-X_train_balanced, y_train_balanced = smote.fit_resample(X_train, y_train)
-
 # Apply HDBSCAN clustering
 hdbscan_model = HDBSCAN(
     min_cluster_size=3000,
@@ -159,8 +155,13 @@ hdbscan_model = HDBSCAN(
     prediction_data=True,
     core_dist_n_jobs=-1
 )
-clusters_train = pd.DataFrame(hdbscan_model.fit_predict(X_train_balanced), columns=['Cluster'])
-X_train_balanced['cluster'] = clusters_train['Cluster']
+clusters_train = pd.DataFrame(hdbscan_model.fit_predict(X_train), columns=['Cluster'])
+
+clusters_test, _ = approximate_predict(hdbscan_model, X_test)
+hdbscan_probs_test = membership_vector(hdbscan_model, X_test.to_numpy())
+
+X_train['cluster'] = clusters_train['Cluster']
+X_test['cluster'] = clusters_test
 
 # Train a preclassifier (Random Forest) to predict clusters
 param_space = {
@@ -178,10 +179,10 @@ bayes_cv = BayesSearchCV(
     n_iter=5,
     cv=3,
     n_jobs=-1,
-    scoring='accuracy',
+    scoring='f1',
     random_state=42
 )
-bayes_cv.fit(X_train_balanced[X_train_balanced['cluster'] != -1].drop(columns=['cluster']), X_train_balanced['cluster'][X_train_balanced['cluster'] != -1])
+bayes_cv.fit(X_train[X_train['cluster'] != -1].drop(columns=['cluster']), X_train_balanced['cluster'][X_train_balanced['cluster'] != -1])
 print(bayes_cv.best_score_)
 pre_classifier = bayes_cv.best_estimator_
 pre_classifier_probabilities = pre_classifier.predict_proba(X_test.drop(columns=['cluster']))
@@ -193,18 +194,25 @@ model_weights_cluster = {}
 entropy_weights = {}
 cluster_centers = {}
 
-for cluster in X_train_balanced['cluster'].unique():
+for cluster in X_train['cluster'].unique():
     if cluster == -1:  # Skip noise points
         continue
     
     print(f"Training model for Cluster {cluster}")
     # Subset the training data for the current cluster
-    X_cluster = X_train_balanced[X_train_balanced['cluster'] == cluster].drop(columns=['cluster']).values
-    y_cluster = y_train_balanced[X_train_balanced['cluster'] == cluster].values
+    X_cluster = X_train[X_train['cluster'] == cluster].drop(columns=['cluster']).values
+    y_cluster = y_train[X_train['cluster'] == cluster].values
     
-    # Create Dataset and DataLoader
-    train_dataset = FlightDataset(X_cluster, y_cluster)
+    # Split into train and validation sets
+    X_train_cluster, X_val_cluster, y_train_cluster, y_val_cluster = train_test_split(
+        X_cluster, y_cluster, test_size=0.2, random_state=42
+    )
+    
+    # Create Dataset and DataLoader for train and validation
+    train_dataset = FlightDataset(X_train_cluster, y_train_cluster)
     train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+    val_dataset = FlightDataset(X_val_cluster, y_val_cluster)
+    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False)
     
     # Define model, criterion, and optimizer
     input_dim = X_cluster.shape[1]
@@ -215,18 +223,38 @@ for cluster in X_train_balanced['cluster'].unique():
     # Train model
     train_model(model, train_loader, criterion, optimizer, epochs=10)
     
+    # Calculate F1 score on validation set
+    model.eval()
+    val_predictions = []
+    val_true = []
+    with torch.no_grad():
+        for X_batch, y_batch in val_loader:
+            X_batch = X_batch.to(device)
+            outputs = model(X_batch).squeeze()
+            predictions = (outputs >= 0.5).int()
+            val_predictions.extend(predictions.cpu().numpy())
+            val_true.extend(y_batch.numpy())
+    
+    f1 = f1_score(val_true, val_predictions)
+    print(f"Cluster {cluster} validation F1 score: {f1:.4f}")
+    
     # Save the trained model for the cluster
     cluster_models[cluster] = model
     
     # Cluster weighted
-    cluster_weight = len(y_cluster) / len(y_train_balanced)
+    cluster_weight = len(y_cluster) / len(y_train)
     model_weights_cluster[cluster] = cluster_weight
     
-    # Calculate f1 weighted value (placeholder for actual f1 score calculation)
-    model_weights_f1[cluster] = 1.0  # Placeholder for actual model evaluation score
+    # Use actual F1 score for weighting
+    model_weights_f1[cluster] = f1
     
-    # Calculate entropy weighted value (placeholder for actual entropy calculation)
-    entropy_weights[cluster] = 1.0  # Placeholder for actual entropy calculation
+    # Calculate entropy weighted value
+    with torch.no_grad():
+        predictions = (model(torch.tensor(X_cluster, dtype=torch.float32).to(device)) >= 0.5).int()
+    relative_errors = (predictions.cpu().numpy() != y_cluster).astype(int)
+    p_error = relative_errors.sum() / len(relative_errors)
+    entropy = -p_error * np.log(p_error + 1e-9) - (1 - p_error) * np.log(1 - p_error + 1e-9)
+    entropy_weights[cluster] = 1 - entropy
     
     # Calculate cluster center
     cluster_centers[cluster] = np.mean(X_cluster, axis=0)
@@ -237,7 +265,6 @@ for model_cluster in entropy_weights:
     entropy_weights[model_cluster] /= total_entropy_weight
 
 # Make predictions on test set using trained DNNs
-model.eval()
 clusters_test = pd.DataFrame(approximate_predict(hdbscan_model, X_test)[0], columns=['Cluster'])
 X_test['cluster'] = clusters_test['Cluster']
 
@@ -246,41 +273,75 @@ test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 all_y_true = []
 final_predictions_f1_weighted = []
 final_predictions_cluster_weighted = []
+final_predictions_probability_weighted = []
 final_predictions_entropy_weighted = []
 final_predictions_non_weighted = []
 final_predictions_pre_classifier = []
 
 with torch.no_grad():
-    for idx, (X_batch, y_batch) in enumerate(test_loader):
-        cluster = X_test.iloc[idx]['cluster']
-        if cluster == -1:
-            # Find nearest cluster using euclidean distance to cluster centroids
-            X_point = X_test.drop(columns=['cluster']).iloc[idx]
-            min_dist = float('inf')
-            nearest_cluster = None
-            for c in cluster_centers.keys():
-                centroid = cluster_centers[c]
-                dist = np.linalg.norm(X_point - centroid)
-                if dist < min_dist:
-                    min_dist = dist
-                    nearest_cluster = c
-            cluster = nearest_cluster
-        
-        model = cluster_models.get(cluster)
-        if model:
-            X_batch = X_batch.to(device)
-            y_batch = y_batch.to(device)
-            outputs = model(X_batch).squeeze()
-            predictions = (outputs >= 0.5).int()
-            final_predictions_non_weighted.append(predictions.item())
-            all_y_true.extend(y_batch.tolist())
+    for X_batch, y_batch in test_loader:
+        # Ensure correct mapping of batch indices to DataFrame indices
+        batch_indices = test_loader.batch_sampler.sampler.indices
+        for idx, X_point in zip(batch_indices, X_batch):
+            cluster = X_test.iloc[idx]['cluster']
+            if cluster == -1:
+                # Find nearest cluster using euclidean distance to cluster centroids
+                min_dist = float('inf')
+                nearest_cluster = None
+                for c, centroid in cluster_centers.items():
+                    dist = np.linalg.norm(X_point.cpu().numpy() - centroid)
+                    if dist < min_dist:
+                        min_dist = dist
+                        nearest_cluster = c
+                cluster = nearest_cluster
             
-            # Weighted predictions
-            final_predictions_f1_weighted.append(predictions.item() * model_weights_f1[cluster])
-            final_predictions_cluster_weighted.append(predictions.item() * model_weights_cluster[cluster])
-            final_predictions_entropy_weighted.append(predictions.item() * entropy_weights[cluster])
-            final_predictions_pre_classifier.append(np.argmax(pre_classifier_probabilities[idx]))
+            probabilities_hdbscan = hdbscan_probs_test[idx]
+            probabilities_pre_classifier = pre_classifier_probabilities[idx]
+            
+            votes_weighted_f1 = {}
+            votes_weighted_cluster = {}
+            votes_probability = {}
+            votes_pre_classifier = {}
+            votes_entropy_weighted = {}
+            
+            for model_cluster, model in cluster_models.items():
+                X_point = X_point.to(device)
+                output = model(X_point.unsqueeze(0)).squeeze()
+                prediction = (output >= 0.5).int().item()
+                
+                if model_cluster == cluster:
+                    final_predictions_non_weighted.append(prediction)
+                
+                weight_f1 = model_weights_f1.get(model_cluster, 0)
+                if prediction in votes_weighted_f1:
+                    votes_weighted_f1[prediction] += weight_f1
+                else:
+                    votes_weighted_f1[prediction] = weight_f1
 
+                weight_cluster = model_weights_cluster.get(model_cluster, 0)
+                if prediction in votes_weighted_cluster:
+                    votes_weighted_cluster[prediction] += weight_cluster
+                else:
+                    votes_weighted_cluster[prediction] = weight_cluster
+            
+                if prediction in votes_probability:
+                    votes_probability[prediction] += probabilities_hdbscan[model_cluster]
+                else:
+                    votes_probability[prediction] = probabilities_hdbscan[model_cluster]
+                
+                if prediction in votes_pre_classifier:
+                    votes_pre_classifier[prediction] += probabilities_pre_classifier[model_cluster]
+                else:
+                    votes_pre_classifier[prediction] = probabilities_pre_classifier[model_cluster]
+                
+                if prediction in votes_entropy_weighted:
+                    votes_entropy_weighted[prediction] += entropy_weights[model_cluster]
+                else:
+                    votes_entropy_weighted[prediction] = entropy_weights[model_cluster] 
+    
+
+            all_y_true.append(y_test.loc[idx])
+            
 # Calculate overall metrics
 ##########################
 # Weighted Average F1 Ensemble
