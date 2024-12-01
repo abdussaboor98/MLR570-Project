@@ -273,79 +273,57 @@ model_weights_f1
 print('Making final predictions')
 final_predictions_f1_weighted = []
 final_predictions_cluster_weighted = []
-final_predictions_probability_weighted = []
 final_predictions_non_weighted = []
 final_predictions_pre_classifier = []
 final_predictions_entropy_weighted = []
 all_y_true = []
+
+# Precompute X_test without 'cluster' column for efficiency
+X_test_no_cluster = X_test.drop(columns=['cluster'])
+
+# Precompute distances to cluster centroids for all points
+distances_to_centroids = {
+    idx: {c: np.linalg.norm(X_test_no_cluster.loc[idx] - kmeans_model.cluster_centers_[c]) for c in rf_models.keys()}
+    for idx in X_test.index
+}
+
 for idx in X_test.index:
     cluster = X_test.loc[idx, 'cluster']
     if cluster == -1:
-        # Find nearest cluster using euclidean distance to cluster centroids
-        X_point = X_test.drop(columns=['cluster']).loc[idx]
-        min_dist = float('inf')
-        nearest_cluster = None
-        
-        for c in rf_models.keys():
-            # Calculate distance to precalculated centroid
-            centroid = kmeans_model.cluster_centers_[c]
-            dist = np.sqrt(((X_point - centroid) ** 2).sum())
-            if dist < min_dist:
-                min_dist = dist
-                nearest_cluster = c
-                
+        # Find nearest cluster using precomputed distances
+        nearest_cluster = min(distances_to_centroids[idx], key=distances_to_centroids[idx].get)
         cluster = nearest_cluster
-        
+
     probabilities_pre_classifier = pre_classifier_probabilities[idx]
-    
+
     votes_weighted_f1 = {}
     votes_weighted_cluster = {}
     votes_probability = {}
     votes_pre_classifier = {}
     votes_entropy_weighted = {}
+
+    X_test_point = X_test_no_cluster.loc[[idx]]
     for model_cluster, model in rf_models.items():
-        prediction = model.predict(X_test.drop(columns=['cluster']).loc[[idx]])[0]
+        prediction = model.predict(X_test_point)[0]
         weight_f1 = model_weights_f1.get(model_cluster, 0)
-        if prediction in votes_weighted_f1:
-            votes_weighted_f1[prediction] += weight_f1
-        else:
-            votes_weighted_f1[prediction] = weight_f1
+        votes_weighted_f1[prediction] = votes_weighted_f1.get(prediction, 0) + weight_f1
 
         weight_cluster = model_weights_cluster.get(model_cluster, 0)
-        if prediction in votes_weighted_cluster:
-            votes_weighted_cluster[prediction] += weight_cluster
-        else:
-            votes_weighted_cluster[prediction] = weight_cluster
-        
-        if prediction in votes_pre_classifier:
-            votes_pre_classifier[prediction] += probabilities_pre_classifier[model_cluster]
-        else:
-            votes_pre_classifier[prediction] = probabilities_pre_classifier[model_cluster]
-            
-        if prediction in votes_entropy_weighted:
-            votes_entropy_weighted[prediction] += entropy_weights[model_cluster]
-        else:
-            votes_entropy_weighted[prediction] = entropy_weights[model_cluster]
-        
-        
+        votes_weighted_cluster[prediction] = votes_weighted_cluster.get(prediction, 0) + weight_cluster
+
+        votes_pre_classifier[prediction] = votes_pre_classifier.get(prediction, 0) + probabilities_pre_classifier[model_cluster]
+        votes_entropy_weighted[prediction] = votes_entropy_weighted.get(prediction, 0) + entropy_weights[model_cluster]
+
     model = rf_models[cluster]
-    prediction = model.predict(X_test.drop(columns=['cluster']).loc[[idx]])[0]
-    final_predictions_non_weighted.append(round(prediction))   
-    
+    prediction = model.predict(X_test_point)[0]
+    final_predictions_non_weighted.append(prediction)
 
     # Final prediction is the weighted average
-    final_prediction_f1_weighted = max(votes_weighted_f1, key=votes_weighted_f1.get)
-    final_predictions_f1_weighted.append(final_prediction_f1_weighted)
-    
-    final_prediction_cluster_weighted = max(votes_weighted_cluster, key=votes_weighted_cluster.get)
-    final_predictions_cluster_weighted.append(final_prediction_cluster_weighted)
-    
-    final_prediction_pre_classifier = max(votes_pre_classifier, key=votes_pre_classifier.get)
-    final_predictions_pre_classifier.append(final_prediction_pre_classifier)
-    
-    final_prediction_entropy_weighted = max(votes_entropy_weighted, key=votes_entropy_weighted.get)
-    final_predictions_entropy_weighted.append(final_prediction_entropy_weighted)
-    
+    final_predictions_f1_weighted.append(max(votes_weighted_f1, key=votes_weighted_f1.get))
+    final_predictions_cluster_weighted.append(max(votes_weighted_cluster, key=votes_weighted_cluster.get))
+    final_predictions_pre_classifier.append(max(votes_pre_classifier, key=votes_pre_classifier.get))
+    final_predictions_entropy_weighted.append(max(votes_entropy_weighted, key=votes_entropy_weighted.get))
+
     all_y_true.append(y_test.loc[idx])
 
 
@@ -374,20 +352,6 @@ overall_recall = recall_score(all_y_true, final_predictions_cluster_weighted)
 overall_f1 = f1_score(all_y_true, final_predictions_cluster_weighted)
 
 print("\nOverall Metrics (Weighted Average Cluster Size Ensemble):")
-print(f"Overall Accuracy: {overall_accuracy}")
-print(f"Overall Precision: {overall_precision}")
-print(f"Overall Recall: {overall_recall}")
-print(f"Overall F1 Score: {overall_f1}")
-
-##########################
-# Weighted Average Probability Ensemble
-##########################
-overall_accuracy = accuracy_score(all_y_true, final_predictions_probability_weighted)
-overall_precision = precision_score(all_y_true, final_predictions_probability_weighted)
-overall_recall = recall_score(all_y_true, final_predictions_probability_weighted)
-overall_f1 = f1_score(all_y_true, final_predictions_probability_weighted)
-
-print("\nOverall Metrics (Weighted Average Probability Ensemble):")
 print(f"Overall Accuracy: {overall_accuracy}")
 print(f"Overall Precision: {overall_precision}")
 print(f"Overall Recall: {overall_recall}")
