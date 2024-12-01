@@ -261,9 +261,6 @@ pre_classifier = bayes_cv.best_estimator_
 pre_classifier_probabilities = pre_classifier.predict_proba(X_test.drop(columns=['cluster']))
 
 
-cluster_centers = {c: X_train[X_train['cluster'] == c].drop(columns=['cluster']).mean() for c in rf_models.keys()}
-
-
 total_entropy_weight = sum(entropy_weights.values())
 for model_cluster in entropy_weights:
     entropy_weights[model_cluster] /= total_entropy_weight
@@ -291,7 +288,7 @@ for idx in X_test.index:
         
         for c in rf_models.keys():
             # Calculate distance to precalculated centroid
-            centroid = cluster_centers[c]
+            centroid = kmeans_model.cluster_centers_[c]
             dist = np.sqrt(((X_point - centroid) ** 2).sum())
             if dist < min_dist:
                 min_dist = dist
@@ -342,9 +339,6 @@ for idx in X_test.index:
     
     final_prediction_cluster_weighted = max(votes_weighted_cluster, key=votes_weighted_cluster.get)
     final_predictions_cluster_weighted.append(final_prediction_cluster_weighted)
-    
-    final_prediction_probability_weighted = max(votes_probability, key=votes_probability.get)
-    final_predictions_probability_weighted.append(final_prediction_probability_weighted)
     
     final_prediction_pre_classifier = max(votes_pre_classifier, key=votes_pre_classifier.get)
     final_predictions_pre_classifier.append(final_prediction_pre_classifier)
