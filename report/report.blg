@@ -5,45 +5,45 @@ The style file: plainnat.bst
 Database file #1: references.bib
 Warning--empty year in dubaiairportsDatasetDa_flight_information_departuresopenapi
 Warning--empty journal in bart2024
-You've used 12 entries,
+You've used 13 entries,
             2773 wiz_defined-function locations,
-            683 strings with 7532 characters,
-and the built_in function-call counts, 5303 in all, are:
-= -- 473
-> -- 287
-< -- 9
-+ -- 99
-- -- 87
-* -- 416
-:= -- 817
-add.period$ -- 44
-call.type$ -- 12
-change.case$ -- 65
-chr.to.int$ -- 12
-cite$ -- 26
-duplicate$ -- 248
-empty$ -- 443
-format.name$ -- 103
-if$ -- 1115
+            691 strings with 7711 characters,
+and the built_in function-call counts, 5634 in all, are:
+= -- 506
+> -- 297
+< -- 10
++ -- 103
+- -- 90
+* -- 437
+:= -- 873
+add.period$ -- 49
+call.type$ -- 13
+change.case$ -- 69
+chr.to.int$ -- 13
+cite$ -- 28
+duplicate$ -- 267
+empty$ -- 473
+format.name$ -- 107
+if$ -- 1184
 int.to.chr$ -- 1
 int.to.str$ -- 1
-missing$ -- 9
-newline$ -- 75
-num.names$ -- 48
-pop$ -- 136
+missing$ -- 10
+newline$ -- 82
+num.names$ -- 52
+pop$ -- 141
 preamble$ -- 1
-purify$ -- 53
+purify$ -- 56
 quote$ -- 0
-skip$ -- 194
+skip$ -- 207
 stack$ -- 0
-substring$ -- 138
-swap$ -- 38
+substring$ -- 140
+swap$ -- 40
 text.length$ -- 2
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 132
+type$ -- 143
 warning$ -- 2
-while$ -- 46
+while$ -- 49
 width$ -- 0
-write$ -- 171
+write$ -- 188
 (There were 2 warnings)

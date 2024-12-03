@@ -1,10 +1,10 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.10.30)  3 DEC 2024 21:36
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.10.30)  3 DEC 2024 23:47
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
  %&-line parsing enabled.
-**"c:/Users/abdusssboor/Downloads/Flight Delay Report/report.tex"
-(c:/Users/abdusssboor/Downloads/Flight Delay Report/report.tex
+**"c:/Users/abdusssboor/Desktop/Masters/MLR570 - Advanced Machine Learning/Research/code/report/report.tex"
+(c:/Users/abdusssboor/Desktop/Masters/MLR570 - Advanced Machine Learning/Research/code/report/report.tex
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-02-20>
 (c:/texlive/2024/texmf-dist/tex/latex/base/article.cls
@@ -294,9 +294,28 @@ LaTeX Info: Redefining \Relbar on input line 971.
 \mathdisplay@stack=\toks25
 LaTeX Info: Redefining \[ on input line 2953.
 LaTeX Info: Redefining \] on input line 2954.
+) (c:/texlive/2024/texmf-dist/tex/latex/booktabs/booktabs.sty
+Package: booktabs 2020/01/12 v1.61803398 Publication quality tables
+\heavyrulewidth=\dimen161
+\lightrulewidth=\dimen162
+\cmidrulewidth=\dimen163
+\belowrulesep=\dimen164
+\belowbottomsep=\dimen165
+\aboverulesep=\dimen166
+\abovetopsep=\dimen167
+\cmidrulesep=\dimen168
+\cmidrulekern=\dimen169
+\defaultaddspace=\dimen170
+\@cmidla=\count312
+\@cmidlb=\count313
+\@aboverulesep=\dimen171
+\@belowrulesep=\dimen172
+\@thisruleclass=\count314
+\@lastruleclass=\count315
+\@thisrulewidth=\dimen173
 ) (c:/texlive/2024/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2024-02-20 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count312
+\l__color_backend_stack_int=\count316
 \l__pdf_internal_box=\box60
 ) (./report.aux)
 \openout1 = `report.aux'.
@@ -321,26 +340,20 @@ LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 46.
 LaTeX Font Info:    ... okay on input line 46.
  (c:/texlive/2024/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count313
-\scratchdimen=\dimen161
+\scratchcounter=\count317
+\scratchdimen=\dimen174
 \scratchbox=\box61
-\nofMPsegments=\count314
-\nofMParguments=\count315
+\nofMPsegments=\count318
+\nofMParguments=\count319
 \everyMPshowfont=\toks26
-\MPscratchCnt=\count316
-\MPscratchDim=\dimen162
-\MPnumerator=\count317
-\makeMPintoPDFobject=\count318
+\MPscratchCnt=\count320
+\MPscratchDim=\dimen175
+\MPnumerator=\count321
+\makeMPintoPDFobject=\count322
 \everyMPtoPDFconversion=\toks27
 ) (c:/texlive/2024/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
- (c:/texlive/2024/texmf-dist/tex/latex/grfext/grfext.sty
-Package: grfext 2019/12/03 v1.3 Manage graphics extensions (HO)
-)
 Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 485.
-Package grfext Info: Graphics extension search list:
-(grfext)             [.pdf,.png,.jpg,.mps,.jpeg,.jbig2,.jb2,.PDF,.PNG,.JPG,.JPEG,.JBIG2,.JB2,.eps]
-(grfext)             \AppendGraphicsExtensions on input line 504.
  (c:/texlive/2024/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 ))
@@ -364,69 +377,153 @@ Overfull \hbox (10.8316pt too wide) has occurred while \output is active
  \OT1/cmr/m/sc/10 Optimizing Flight Departure Delay Predictions at Dubai Airport Using ML Techniques  
  []
 
-[3]
-LaTeX Font Info:    Trying to load font information for U+msa on input line 118.
+[3] [4]
+LaTeX Font Info:    Trying to load font information for U+msa on input line 120.
  (c:/texlive/2024/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 118.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 120.
  (c:/texlive/2024/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
 
-LaTeX Warning: Reference `tbl:apiFields' on page 4 undefined on input line 118.
+LaTeX Warning: Reference `tbl:apiFields' on page 5 undefined on input line 120.
 
 
-LaTeX Warning: Reference `tbl:weatherFields' on page 4 undefined on input line 119.
+LaTeX Warning: Reference `tbl:weatherFields' on page 5 undefined on input line 122.
 
-<images/flights_per_month_year.png, id=93, 867.24pt x 578.16pt>
+<images/flights_per_month_year.png, id=111, 867.24pt x 578.16pt>
 File: images/flights_per_month_year.png Graphic file (type png)
 <use images/flights_per_month_year.png>
-Package pdftex.def Info: images/flights_per_month_year.png  used on input line 122.
+Package pdftex.def Info: images/flights_per_month_year.png  used on input line 125.
 (pdftex.def)             Requested size: 368.57964pt x 245.71916pt.
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [4]
-Underfull \vbox (badness 3019) has occurred while \output is active []
-
-
 Overfull \hbox (10.8316pt too wide) has occurred while \output is active
  \OT1/cmr/m/sc/10 Optimizing Flight Departure Delay Predictions at Dubai Airport Using ML Techniques  
  []
 
-[5 <./images/flights_per_month_year.png>]
-<images/model.png, id=117, 552.0625pt x 350.30875pt>
+[5]
+<images/model.png, id=127, 552.0625pt x 350.30875pt>
 File: images/model.png Graphic file (type png)
 <use images/model.png>
-Package pdftex.def Info: images/model.png  used on input line 137.
-(pdftex.def)             Requested size: 368.57964pt x 233.89316pt.
- [6]
+Package pdftex.def Info: images/model.png  used on input line 141.
+(pdftex.def)             Requested size: 325.215pt x 206.37035pt.
+ [6 <./images/flights_per_month_year.png>]
 Overfull \hbox (10.8316pt too wide) has occurred while \output is active
  \OT1/cmr/m/sc/10 Optimizing Flight Departure Delay Predictions at Dubai Airport Using ML Techniques  
  []
 
-[7 <./images/model.png>] (./report.bbl
-Underfull \hbox (badness 10000) in paragraph at lines 16--19
+[7 <./images/model.png>] [8]
+Overfull \hbox (10.8316pt too wide) has occurred while \output is active
+ \OT1/cmr/m/sc/10 Optimizing Flight Departure Delay Predictions at Dubai Airport Using ML Techniques  
+ []
+
+[9]
+Underfull \hbox (badness 10000) in paragraph at lines 229--229
+[]|\OT1/cmr/bx/n/10.95 Data
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 229--229
+[]| \OT1/cmr/bx/n/10.95 Lan-
+ []
+
+
+Overfull \hbox (47.99997pt too wide) in alignment at lines 226--229
+ [] [] [] [] 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 231--231
+[]|\OT1/cmr/m/n/10.95 es-ti-mated-off-block-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 232--232
+[]|\OT1/cmr/m/n/10.95 date-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 233--233
+[]|\OT1/cmr/m/n/10.95 sched-uled-off-block-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 233--233
+[]|\OT1/cmr/m/n/10.95 date-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 234--234
+[]|\OT1/cmr/m/n/10.95 public-sched-uled-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 235--235
+[]|\OT1/cmr/m/n/10.95 date-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 237--237
+[]|\OT1/cmr/m/n/10.95 date-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 239--239
+[]|\OT1/cmr/m/n/10.95 date-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 240--240
+[]|\OT1/cmr/m/n/10.95 air-craft-park-ing-po-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 243--243
+[]|\OT1/cmr/m/n/10.95 check-i-nal-lo-ca-tion-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 244--244
+[]|\OT1/cmr/m/n/10.95 check-i-nal-lo-ca-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 265--265
+[]|\OT1/cmr/m/n/10.95 air-craftreg-is-tra-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 270--270
+[]|\OT1/cmr/m/n/10.95 date-
+ []
+
+
+Overfull \hbox (47.99997pt too wide) in alignment at lines 229--288
+ [] [] [] [] 
+ []
+
+[10]
+Overfull \hbox (10.8316pt too wide) has occurred while \output is active
+ \OT1/cmr/m/sc/10 Optimizing Flight Departure Delay Predictions at Dubai Airport Using ML Techniques  
+ []
+
+[11] (./report.bbl
+Underfull \hbox (badness 10000) in paragraph at lines 23--26
 []\OT1/cmr/m/n/10.95 Dubai Air-ports.  Dataset - da[]flight[]information[]departures-open-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 16--19
+Underfull \hbox (badness 10000) in paragraph at lines 23--26
 \OT1/cmr/m/n/10.95 api.  https://www.dubaipulse.gov.ae/data/dubai-airports-flight-
  []
 
 
-Underfull \hbox (badness 4634) in paragraph at lines 21--23
+Underfull \hbox (badness 4634) in paragraph at lines 28--30
 []\OT1/cmr/m/n/10.95 Airlines for Amer-ica.  "u.s. pas-sen-ger car-rier de-lay costs" [on-line]. avail-able:
  []
 
-[8])
-Overfull \hbox (10.8316pt too wide) has occurred while \output is active
- \OT1/cmr/m/sc/10 Optimizing Flight Departure Delay Predictions at Dubai Airport Using ML Techniques  
- []
-
-[9] (./report.aux)
+) [12] (./report.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-02-20>
@@ -436,21 +533,21 @@ L3 programming layer <2024-02-20>
 LaTeX Warning: There were undefined references.
 
 Package rerunfilecheck Info: File `report.out' has not changed.
-(rerunfilecheck)             Checksum: 5C8F64B708333CD248E79BD32C9C69B4;1402.
+(rerunfilecheck)             Checksum: F39C5D86494271909E2807A5DEA00D1D;1706.
  ) 
 Here is how much of TeX's memory you used:
- 10546 strings out of 474116
- 159491 string characters out of 5747716
- 1938190 words of memory out of 5000000
- 32732 multiletter control sequences out of 15000+600000
+ 10589 strings out of 474116
+ 160022 string characters out of 5747716
+ 1962190 words of memory out of 5000000
+ 32768 multiletter control sequences out of 15000+600000
  566477 words of font info for 66 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 90i,9n,93p,2059b,560s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 90i,9n,93p,2099b,540s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmcsc10.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/cm-super/sfrm1095.pfb>
-Output written on report.pdf (9 pages, 233742 bytes).
+Output written on report.pdf (12 pages, 244018 bytes).
 PDF statistics:
- 215 PDF objects out of 1000 (max. 8388607)
- 174 compressed objects within 2 object streams
- 39 named destinations out of 1000 (max. 500000)
- 99 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 253 PDF objects out of 1000 (max. 8388607)
+ 208 compressed objects within 3 object streams
+ 46 named destinations out of 1000 (max. 500000)
+ 115 words of extra memory for PDF output out of 10000 (max. 10000000)
 

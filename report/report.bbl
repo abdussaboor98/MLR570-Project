@@ -1,4 +1,4 @@
-\begin{thebibliography}{12}
+\begin{thebibliography}{13}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -11,6 +11,13 @@ Kamal Berahmand, Fatemeh Daneshfar, Elaheh~Sadat Salehi, Yuefeng Li, and Yue Xu.
 \newblock \emph{Artificial Intelligence Review}, 57\penalty0 (2):\penalty0 28, February 2024.
 \newblock ISSN 1573-7462.
 \newblock \doi{10.1007/s10462-023-10662-6}.
+
+\bibitem[Dai(2024)]{Dai2024}
+Min Dai.
+\newblock A hybrid machine learning-based model for predicting flight delay through aviation big data.
+\newblock \emph{Scientific Reports}, 14, 12 2024.
+\newblock ISSN 20452322.
+\newblock \doi{10.1038/s41598-024-55217-z}.
 
 \bibitem[{Dubai Airports}()]{dubaiairportsDatasetDa_flight_information_departuresopenapi}
 {Dubai Airports}.
