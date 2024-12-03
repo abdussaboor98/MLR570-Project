@@ -1,0 +1,75 @@
+\begin{thebibliography}{12}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Berahmand et~al.(2024)Berahmand, Daneshfar, Salehi, Li, and Xu]{berahmandAutoencodersTheirApplications2024}
+Kamal Berahmand, Fatemeh Daneshfar, Elaheh~Sadat Salehi, Yuefeng Li, and Yue Xu.
+\newblock Autoencoders and their applications in machine learning: A survey.
+\newblock \emph{Artificial Intelligence Review}, 57\penalty0 (2):\penalty0 28, February 2024.
+\newblock ISSN 1573-7462.
+\newblock \doi{10.1007/s10462-023-10662-6}.
+
+\bibitem[{Dubai Airports}()]{dubaiairportsDatasetDa_flight_information_departuresopenapi}
+{Dubai Airports}.
+\newblock Dataset - da\_flight\_information\_departures-open-api.
+\newblock https://www.dubaipulse.gov.ae/data/dubai-airports-flight-info/da\_flight\_information\_departures-open-api.
+
+\bibitem[for America(2024)]{aA2024}
+Airlines for America.
+\newblock "u.s. passenger carrier delay costs" [online]. available: https://www.airlines.org/dataset/u-s-passenger-carrier-delay-costs/, 7 2024.
+
+\bibitem[Gabdullin(2024)]{gabdullinLatentSpaceConfiguration2024}
+Nikita Gabdullin.
+\newblock Latent space configuration for improved generalization in supervised autoencoder neural networks, February 2024.
+
+\bibitem[Hatıpoğlu and Tosun(2024)]{hatipoglu2024predictive}
+I.~Hatıpoğlu and Ö. Tosun.
+\newblock Predictive modeling of flight delays at an airport using machine learning methods.
+\newblock \emph{Applied Sciences}, 14\penalty0 (13):\penalty0 art. 5472, Jun. 2024.
+\newblock \doi{10.3390/app14135472}.
+
+\bibitem[Hinton and Salakhutdinov(2006)]{hintonReducingDimensionalityData2006}
+G.~E. Hinton and R.~R. Salakhutdinov.
+\newblock Reducing the {{Dimensionality}} of {{Data}} with {{Neural Networks}}.
+\newblock \emph{Science}, 313\penalty0 (5786):\penalty0 504--507, July 2006.
+\newblock \doi{10.1126/science.1127647}.
+
+\bibitem[Jose(2023)]{usAirlineSawRecord}
+A.~Jose.
+\newblock U.s. airlines saw record flight delays in 2023.
+\newblock \emph{Dallas Express}, 12 2023.
+
+\bibitem[Liu et~al.(2022)Liu, Zhao, Lu, and Wu]{liu2022flight}
+J.~Liu, J.~Zhao, Y.~Lu, and Y.~Wu.
+\newblock Flight delay prediction method based on lstm.
+\newblock In \emph{2022 International Conference on Automation, Robotics and Computer Engineering (ICARCE)}, pages 1--4, 2022.
+\newblock \doi{10.1109/ICARCE55724.2022.10046519}.
+
+\bibitem[Noëth(2028)]{bart2024}
+Bart Noëth.
+\newblock "forecast predicts passenger numbers could double to 8.2 billion in 2037".
+\newblock 10 2028.
+
+\bibitem[Pineda-Jaramillo et~al.(2024)Pineda-Jaramillo, Munoz, Mesa-Arango, Gonzalez-Calderon, and Lange]{integratingMultipleData}
+Juan Pineda-Jaramillo, Claudia Munoz, Rodrigo Mesa-Arango, Carlos Gonzalez-Calderon, and Anne Lange.
+\newblock Integrating multiple data sources for improved flight delay prediction using explainable machine learning.
+\newblock \emph{Research in Transportation Business and Management}, 56, 10 2024.
+\newblock ISSN 22105395.
+\newblock \doi{10.1016/j.rtbm.2024.101161}.
+
+\bibitem[Qu et~al.(2023)Qu, Wu, and Zhang]{qu2023flight}
+J.~Qu, S.~Wu, and J.~Zhang.
+\newblock Flight delay propagation prediction based on deep learning.
+\newblock \emph{Mathematics}, 11\penalty0 (3), Feb 2023.
+\newblock \doi{10.3390/math11030494}.
+
+\bibitem[Tao et~al.(2021)Tao, Man, and Yanling]{tao2021flight}
+J.~Tao, H.~Man, and L.~Yanling.
+\newblock Flight delay prediction based on lightgbm.
+\newblock In \emph{Proceedings of 2021 IEEE 3rd International Conference on Civil Aviation Safety and Information Technology (ICCASIT 2021)}, pages 1248--1251. Institute of Electrical and Electronics Engineers Inc., 2021.
+\newblock \doi{10.1109/ICCASIT53235.2021.9633431}.
+
+\end{thebibliography}

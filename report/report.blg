@@ -1,0 +1,49 @@
+This is BibTeX, Version 0.99d (TeX Live 2024)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: report.aux
+The style file: plainnat.bst
+Database file #1: references.bib
+Warning--empty year in dubaiairportsDatasetDa_flight_information_departuresopenapi
+Warning--empty journal in bart2024
+You've used 12 entries,
+            2773 wiz_defined-function locations,
+            683 strings with 7532 characters,
+and the built_in function-call counts, 5303 in all, are:
+= -- 473
+> -- 287
+< -- 9
++ -- 99
+- -- 87
+* -- 416
+:= -- 817
+add.period$ -- 44
+call.type$ -- 12
+change.case$ -- 65
+chr.to.int$ -- 12
+cite$ -- 26
+duplicate$ -- 248
+empty$ -- 443
+format.name$ -- 103
+if$ -- 1115
+int.to.chr$ -- 1
+int.to.str$ -- 1
+missing$ -- 9
+newline$ -- 75
+num.names$ -- 48
+pop$ -- 136
+preamble$ -- 1
+purify$ -- 53
+quote$ -- 0
+skip$ -- 194
+stack$ -- 0
+substring$ -- 138
+swap$ -- 38
+text.length$ -- 2
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 132
+warning$ -- 2
+while$ -- 46
+width$ -- 0
+write$ -- 171
+(There were 2 warnings)

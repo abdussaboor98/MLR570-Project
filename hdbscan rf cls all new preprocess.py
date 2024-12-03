@@ -80,12 +80,10 @@ X_test = pd.DataFrame(scaler.transform(X_test), columns=X_test.columns)
 print('Training baseline model')
 
 param_space = {
-    'n_estimators': Integer(100, 300),
-    'max_depth': Integer(10, 50),
-    'min_samples_split': Integer(2, 20),
-    'min_samples_leaf': Integer(1, 10),
-    'max_features': Categorical(['sqrt', 'log2']),
-    'criterion': Categorical(['gini', 'entropy'])
+        'n_estimators': Integer(50, 300),
+        'max_depth': Integer(3, 50),
+        'min_samples_split': Integer(2, 20),
+        'min_samples_leaf': Integer(1, 20),
 }
 
 # Apply SMOTE to balance the training data
@@ -98,32 +96,32 @@ print(pd.Series(y_train).value_counts())
 print("\nBalanced class distribution:")
 print(pd.Series(y_train_balanced).value_counts())
 
-bayes_cv = BayesSearchCV(
-    estimator=RandomForestClassifier(),
-    search_spaces=param_space,
-    n_iter=5,
-    cv=5,
-    n_jobs=-1,
-    n_points=2,
-    scoring='f1',
-    random_state=42
-)
-bayes_cv.fit(X_train_balanced, y_train_balanced)
-best_rf_no_cluster = bayes_cv.best_estimator_
+# bayes_cv = BayesSearchCV(
+#     estimator=RandomForestClassifier(),
+#     search_spaces=param_space,
+#     n_iter=5,
+#     cv=10,
+#     n_jobs=-1,
+#     n_points=2,
+#     scoring='f1',
+#     random_state=42
+# )
+# bayes_cv.fit(X_train_balanced, y_train_balanced)
+# best_rf_no_cluster = bayes_cv.best_estimator_
 
-y_pred = best_rf_no_cluster.predict(X_test)
-accuracy_no_cluster = accuracy_score(y_test, y_pred)
-precision_no_cluster = precision_score(y_test, y_pred)
-recall_no_cluster = recall_score(y_test, y_pred)
-f1_no_cluster = f1_score(y_test, y_pred)
+# y_pred = best_rf_no_cluster.predict(X_test)
+# accuracy_no_cluster = accuracy_score(y_test, y_pred)
+# precision_no_cluster = precision_score(y_test, y_pred)
+# recall_no_cluster = recall_score(y_test, y_pred)
+# f1_no_cluster = f1_score(y_test, y_pred)
 
-print(f"Performance without clustering:")
-print(f"Accuracy: {accuracy_no_cluster}")
-print(f"Precision: {precision_no_cluster}")
-print(f"Recall: {recall_no_cluster}")
-print(f"F1 Score: {f1_no_cluster}")
-print("==========================================")
-print()
+# print(f"Performance without clustering:")
+# print(f"Accuracy: {accuracy_no_cluster}")
+# print(f"Precision: {precision_no_cluster}")
+# print(f"Recall: {recall_no_cluster}")
+# print(f"F1 Score: {f1_no_cluster}")
+# print("==========================================")
+# print()
 
 print('Training HDBSCAN')
 hdbscan_model = HDBSCAN(
@@ -178,12 +176,10 @@ for cluster in np.unique(clusters_train):
 
     # Define objective function for hyperopt
     param_space = {
-        'n_estimators': Integer(100, 300),
-        'max_depth': Integer(10, 50),
+        'n_estimators': Integer(50, 300),
+        'max_depth': Integer(3, 50),
         'min_samples_split': Integer(2, 20),
-        'min_samples_leaf': Integer(1, 10),
-        'max_features': Categorical(['sqrt', 'log2']),
-        'criterion': Categorical(['gini', 'entropy'])
+        'min_samples_leaf': Integer(1, 20),
     }
 
     # Use Bayesian optimization for hyperparameter tuning
@@ -191,7 +187,7 @@ for cluster in np.unique(clusters_train):
         estimator=RandomForestClassifier(),
         search_spaces=param_space,
         n_iter=5,
-        cv=5,
+        cv=10,
         n_jobs=-1,
         n_points=2,
         scoring='f1',
@@ -222,12 +218,10 @@ for cluster in np.unique(clusters_train):
 
 print('Training Pre-Classifier')
 param_space = {
-    'n_estimators': Integer(100, 300),
-    'max_depth': Integer(10, 50),
-    'min_samples_split': Integer(2, 20),
-    'min_samples_leaf': Integer(1, 10),
-    'max_features': Categorical(['sqrt', 'log2']),
-    'criterion': Categorical(['gini', 'entropy'])
+        'n_estimators': Integer(50, 300),
+        'max_depth': Integer(3, 50),
+        'min_samples_split': Integer(2, 20),
+        'min_samples_leaf': Integer(1, 20),
 }
 bayes_cv = BayesSearchCV(
     estimator=RandomForestClassifier(),
@@ -314,13 +308,13 @@ for idx in X_test.index:
 
 
 # Calculate overall metrics
-print(f"Performance without clustering:")
-print(f"Accuracy: {accuracy_no_cluster}")
-print(f"Precision: {precision_no_cluster}")
-print(f"Recall: {recall_no_cluster}")
-print(f"F1 Score: {f1_no_cluster}")
-print("==========================================")
-print()
+# print(f"Performance without clustering:")
+# print(f"Accuracy: {accuracy_no_cluster}")
+# print(f"Precision: {precision_no_cluster}")
+# print(f"Recall: {recall_no_cluster}")
+# print(f"F1 Score: {f1_no_cluster}")
+# print("==========================================")
+# print()
 ##########################
 # Weighted Average F1 Ensemble
 ##########################
